@@ -4,8 +4,15 @@
   "workspaces": [
     "packages/*"
   ],
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
   "dependencies": {},
   "devDependencies": {
-    "lerna": "^9.0.7"
+    "@swc/core": "^1.10.18",
+    "lerna": "^9.0.7",
+    "unplugin-swc": "^1.5.2",
+    "vitest": "^3.1.1"
   }
 }

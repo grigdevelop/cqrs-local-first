@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "start": "tsx src/index.ts",
-    "start:watch": "tsx watch src/index.ts"
+    "start:watch": "tsx watch src/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "keywords": [],
   "author": "",
