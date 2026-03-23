@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { injectable } from "inversify";
+import type { Newable } from "inversify";
 
 export type OperationDefinition<TType extends string, TPayload, TOutput> = {
     type: TType;
@@ -27,6 +29,7 @@ export type ExtractOutput<T> = T extends OperationDefinition<any, any, infer TOu
     : never;
 
 export function createHandler<T extends OperationDefinition<string, unknown, unknown>>(definition: T) {
+    @injectable()
     abstract class Handler {
         readonly definition = definition;
         abstract execute(input: ExtractInput<T>): Promise<ExtractOutput<T>>;
@@ -38,6 +41,8 @@ export interface HandlerInstance {
     readonly definition: OperationDefinition<string, any, any>;
     execute(input: any): Promise<any>;
 }
+
+export type HandlerClass = Newable<HandlerInstance>;
 
 export type ExtractHandlerDefinitions<THandlers extends HandlerInstance[]> = THandlers[number]['definition'];
 

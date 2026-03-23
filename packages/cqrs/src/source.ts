@@ -1,12 +1,29 @@
 import { z } from "zod";
+import { injectable, inject } from "inversify";
 import { createQuery, createQueryHandler, ExtractQueryInput, ExtractQueryOutput } from "./query";
 import { createMutation, createMutationHandler, ExtractMutationInput, ExtractMutationOutput } from './mutation';
 import { createApplication } from "./application";
 
 // ----
-// Example usage
+// Example services
 // ----
 
+const LoggerToken = Symbol('Logger');
+
+interface Logger {
+    log(msg: string): void;
+}
+
+@injectable()
+class ConsoleLogger implements Logger {
+    log(msg: string) {
+        console.log('[LOG]', msg);
+    }
+}
+
+// ----
+// Example usage
+// ----
 
 type GetTestQueryInput = ExtractQueryInput<typeof testQuery>;
 type GetTestQueryOutput = ExtractQueryOutput<typeof testQuery>;
@@ -17,8 +34,14 @@ const testQuery = createQuery(
     z.number()
 );
 
+@injectable()
 class TestQueryHandler extends createQueryHandler(testQuery) {
+    constructor(@inject(LoggerToken) private logger: Logger) {
+        super();
+    }
+
     async execute(input: GetTestQueryInput): Promise<GetTestQueryOutput> {
+        this.logger.log(`executing testQuery with name: ${input.input.name}`);
         return 42;
     }
 }
@@ -32,21 +55,29 @@ const testMutation = createMutation(
     z.boolean()
 );
 
+@injectable()
 class TestMutationHandler extends createMutationHandler(testMutation) {
+    constructor(@inject(LoggerToken) private logger: Logger) {
+        super();
+    }
+
     async execute(input: CreateTestMutationInput): Promise<CreateTestMutationOutput> {
+        this.logger.log(`executing testMutation with id: ${input.input.id}`);
         return true;
     }
 }
 
-
 const app = createApplication({
-    queries: [new TestQueryHandler()],
-    mutations: [new TestMutationHandler()]
+    services: (container) => {
+        container.bind<Logger>(LoggerToken).to(ConsoleLogger);
+    },
+    queries: [TestQueryHandler],
+    mutations: [TestMutationHandler]
 });
 
 // executeQuery is strongly typed:
 // - type is constrained to 'testQuery'
-// - input is typed as string
+// - input is typed as { name: string }
 // - return is Promise<number>
 app.executeQuery('testQuery', { name: 'hello' }).then(console.log);
 

@@ -35,10 +35,12 @@
 
     // Recommended Options
     "strict": true,
-    "jsx": "react-jsx",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "isolatedModules": true,
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true,
+    "jsx": "react-jsx",
   }
 }
