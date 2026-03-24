@@ -5,7 +5,9 @@ import type { Insertable, Selectable } from 'kysely';
 export interface TodoTable {
     id: string;
     text: string;
-    done: number; // SQLite boolean: 0 | 1
+    done: number;               // SQLite boolean: 0 | 1
+    deleted: number;            // soft-delete flag: 0 | 1
+    replicache_version: number; // server version when this row was last modified
 }
 
 export interface ReplicacheClientTable {
@@ -14,9 +16,17 @@ export interface ReplicacheClientTable {
     last_mutation_id: number;
 }
 
+// Single-row table holding the global server version counter.
+// Every mutation increments this atomically; pull uses it as the cookie.
+export interface ReplicacheServerVersionTable {
+    id: number;   // always 1
+    version: number;
+}
+
 export interface AppDatabase {
     todos: TodoTable;
     replicache_clients: ReplicacheClientTable;
+    replicache_server_version: ReplicacheServerVersionTable;
 }
 
 // ---- Kysely row helpers ----
