@@ -1,5 +1,3 @@
-import { injectable } from "inversify";
-import type { WriteTransaction } from "replicache";
 import {
     OperationDefinition,
     createOperation,
@@ -20,17 +18,9 @@ export type ExtractMutationInput<T> = ExtractInput<T>;
 
 export type ExtractMutationOutput<T> = ExtractOutput<T>;
 
-export function createMutationHandler<T extends OperationDefinition<string, unknown, unknown>>(definition: T) {
-    @injectable()
-    abstract class MutationHandler extends createHandler(definition) {
-        abstract mutate(tx: WriteTransaction, input: ExtractInput<T>['input']): Promise<void>;
-    }
-    return MutationHandler;
-}
+export const createMutationHandler = createHandler;
 
-export interface MutationHandlerInstance extends HandlerInstance {
-    mutate(tx: WriteTransaction, input: unknown): Promise<void>;
-}
+export type MutationHandlerInstance = HandlerInstance;
 
 export type ExtractHandlerMutations<THandlers extends MutationHandlerInstance[]> = ExtractHandlerDefinitions<THandlers>;
 

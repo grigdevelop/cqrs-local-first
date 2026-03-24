@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { injectable, inject } from 'inversify';
 import { createQuery, createQueryHandler, ExtractQueryInput, ExtractQueryOutput } from './query';
 import { createMutation, createMutationHandler, ExtractMutationInput, ExtractMutationOutput } from './mutation';
-import { createApplication } from './application';
+import { createApplication, createClientMutators } from './application';
 import type { WriteTransaction } from 'replicache';
 
 // ---- shared operation definitions ----
@@ -39,10 +39,6 @@ type AddOutput = ExtractMutationOutput<typeof addMutation>;
 class AddMutationHandler extends createMutationHandler(addMutation) {
     async execute(input: AddInput): Promise<AddOutput> {
         return input.input.a + input.input.b;
-    }
-
-    async mutate(tx: WriteTransaction, input: AddInput['input']): Promise<void> {
-        await tx.set(`sum`, input.a + input.b);
     }
 }
 
@@ -164,5 +160,34 @@ describe('createApplication', () => {
             expect(echo).toBe('test');
             expect(sum).toBe(15);
         });
+    });
+});
+
+describe('createClientMutators', () => {
+    const app = createApplication({ mutations: [AddMutationHandler] });
+
+    it('returns the mutators object', () => {
+        const mutators = createClientMutators<typeof app>({
+            add: async (_tx, _input) => {},
+        });
+        expect(typeof mutators.add).toBe('function');
+    });
+
+    it('calls the mutator with the tx and input', async () => {
+        const mockTx: WriteTransaction = {
+            set: vi.fn(),
+            del: vi.fn(),
+            get: vi.fn(),
+            has: vi.fn(),
+        } as unknown as WriteTransaction;
+
+        const mutators = createClientMutators<typeof app>({
+            add: async (tx, input) => {
+                await tx.set('result', input.a + input.b);
+            },
+        });
+
+        await mutators.add(mockTx, { a: 2, b: 3 });
+        expect(mockTx.set).toHaveBeenCalledWith('result', 5);
     });
 });

@@ -2,8 +2,7 @@ import { z } from "zod";
 import { injectable, inject } from "inversify";
 import { createQuery, createQueryHandler, ExtractQueryInput, ExtractQueryOutput } from "./query";
 import { createMutation, createMutationHandler, ExtractMutationInput, ExtractMutationOutput } from './mutation';
-import type { WriteTransaction } from "replicache";
-import { createApplication } from "./application";
+import { createApplication, createClientMutators } from "./application";
 
 // ----
 // Example services
@@ -30,8 +29,8 @@ type GetTestQueryInput = ExtractQueryInput<typeof testQuery>;
 type GetTestQueryOutput = ExtractQueryOutput<typeof testQuery>;
 
 const testQuery = createQuery(
-    'testQuery', 
-    z.object({ name: z.string() }), 
+    'testQuery',
+    z.object({ name: z.string() }),
     z.number()
 );
 
@@ -66,10 +65,6 @@ class TestMutationHandler extends createMutationHandler(testMutation) {
         this.logger.log(`executing testMutation with id: ${input.input.id}`);
         return true;
     }
-
-    async mutate(tx: WriteTransaction, input: CreateTestMutationInput['input']): Promise<void> {
-        await tx.set(`item/${input.id}`, { id: input.id, value: input.value });
-    }
 }
 
 const app = createApplication({
@@ -91,3 +86,13 @@ app.executeQuery('testQuery', { name: 'hello' }).then(console.log);
 // - input is typed as { id: string; value: number }
 // - return is Promise<boolean>
 app.executeMutation('testMutation', { id: '1', value: 42 }).then(console.log);
+
+// createClientMutators is strongly typed:
+// - 'testMutation' is the only valid key (derived from app's mutation types)
+// - input is typed as { id: string; value: number }
+// - missing or extra keys are a TypeScript error
+const mutators = createClientMutators<typeof app>({
+    testMutation: async (tx, input) => {
+        await tx.set(`item/${input.id}`, { id: input.id, value: input.value });
+    }
+});

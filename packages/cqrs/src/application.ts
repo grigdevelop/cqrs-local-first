@@ -1,4 +1,5 @@
 import { Container } from "inversify";
+import type { WriteTransaction } from "replicache";
 import { HandlerInstance, HandlerClass, OperationDefinition } from "./operation";
 
 type DefinitionsOf<T extends HandlerClass[]> = InstanceType<T[number]>['definition'];
@@ -61,4 +62,20 @@ export function createApplication<
         }
     }
     return new Application();
+}
+
+type ApplicationInstance = ReturnType<typeof createApplication>;
+
+type MutationTypesOf<TApp extends ApplicationInstance> =
+    TApp extends { executeMutation(type: infer T extends string, input: any): any } ? T : never;
+
+type MutationInputOf<TApp extends ApplicationInstance, TType extends string> =
+    TApp extends { executeMutation(type: TType, input: infer I): any } ? I : never;
+
+export function createClientMutators<TApp extends ApplicationInstance>(
+    mutators: {
+        [TType in MutationTypesOf<TApp>]: (tx: WriteTransaction, input: MutationInputOf<TApp, TType>) => Promise<void>
+    }
+) {
+    return mutators;
 }
