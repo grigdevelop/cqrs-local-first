@@ -10,6 +10,7 @@ export interface TodoTable {
 
 export interface ReplicacheClientTable {
     client_id: string;
+    client_group_id: string;
     last_mutation_id: number;
 }
 
