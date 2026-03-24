@@ -110,6 +110,42 @@ describe('createApplication', () => {
         });
     });
 
+    describe('input validation', () => {
+        const app = createApplication({
+            queries: [EchoQueryHandler],
+            mutations: [AddMutationHandler],
+        });
+
+        it('throws a ZodError when query input fails validation', () => {
+            // @ts-expect-error — intentionally passing wrong shape
+            expect(() => app.executeQuery('echo', { message: 123 })).toThrow();
+        });
+
+        it('throws a ZodError when mutation input fails validation', () => {
+            // @ts-expect-error — intentionally passing wrong shape
+            expect(() => app.executeMutation('add', { a: 'not-a-number', b: 4 })).toThrow();
+        });
+
+        it('strips unknown fields before passing input to the handler', async () => {
+            const received: unknown[] = [];
+
+            const spyQuery = createQuery('spy', z.object({ x: z.number() }), z.void());
+            type SpyInput = ExtractQueryInput<typeof spyQuery>;
+
+            @injectable()
+            class SpyHandler extends createQueryHandler(spyQuery) {
+                async execute(input: SpyInput) {
+                    received.push(input.input);
+                }
+            }
+
+            const spyApp = createApplication({ queries: [SpyHandler] });
+            // @ts-expect-error — intentionally passing extra field
+            await spyApp.executeQuery('spy', { x: 1, extra: 'dropped' });
+            expect(received[0]).toEqual({ x: 1 });
+        });
+    });
+
     describe('with both queries and mutations', () => {
         it('handles mixed registration', async () => {
             const app = createApplication({

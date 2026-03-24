@@ -46,7 +46,8 @@ export function createApplication<
         ): Promise<OutputFor<DefinitionsOf<TQueryClasses>, TType>> {
             const handler = this.queryHandlers.get(type);
             if (!handler) throw new Error(`No handler for query type: ${type}`);
-            return handler.execute({ type, input }) as Promise<OutputFor<DefinitionsOf<TQueryClasses>, TType>>;
+            const validatedInput = handler.definition.input.parse(input);
+            return handler.execute({ type, input: validatedInput }) as Promise<OutputFor<DefinitionsOf<TQueryClasses>, TType>>;
         }
 
         executeMutation<TType extends DefinitionsOf<TMutationClasses>['type']>(
@@ -55,7 +56,8 @@ export function createApplication<
         ): Promise<OutputFor<DefinitionsOf<TMutationClasses>, TType>> {
             const handler = this.mutationHandlers.get(type);
             if (!handler) throw new Error(`No handler for mutation type: ${type}`);
-            return handler.execute({ type, input }) as Promise<OutputFor<DefinitionsOf<TMutationClasses>, TType>>;
+            const validatedInput = handler.definition.input.parse(input);
+            return handler.execute({ type, input: validatedInput }) as Promise<OutputFor<DefinitionsOf<TMutationClasses>, TType>>;
         }
     }
     return new Application();
