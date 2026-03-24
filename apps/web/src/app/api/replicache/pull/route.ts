@@ -1,21 +1,20 @@
 import { app } from '@/todos/app';
-import { clientMutationIDs } from '@/lib/replicache-server';
+import { db } from '@/db/database';
 
 export async function POST() {
-    const todos = await app.executeQuery('getTodos', undefined);
-
-    const patch = [
-        { op: 'clear' as const },
-        ...todos.map((todo) => ({
-            op: 'put' as const,
-            key: `todo/${todo.id}`,
-            value: todo,
-        })),
-    ];
+    const [todos, clients] = await Promise.all([
+        app.executeQuery('getTodos', undefined),
+        db.selectFrom('replicache_clients').selectAll().execute(),
+    ]);
 
     return Response.json({
         cookie: Date.now(),
-        lastMutationIDChanges: Object.fromEntries(clientMutationIDs),
-        patch,
+        lastMutationIDChanges: Object.fromEntries(
+            clients.map((c) => [c.client_id, c.last_mutation_id])
+        ),
+        patch: [
+            { op: 'clear' },
+            ...todos.map((todo) => ({ op: 'put', key: `todo/${todo.id}`, value: todo })),
+        ],
     });
 }

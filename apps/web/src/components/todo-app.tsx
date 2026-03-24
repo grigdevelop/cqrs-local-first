@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Replicache } from 'replicache';
 import { useSubscribe } from 'replicache-react';
 import type { WriteTransaction } from 'replicache';
-import type { Todo } from '@/todos/store';
+import type { Todo } from '@/db/schema';
 
 const mutators = {
     createTodo: async (tx: WriteTransaction, args: { text: string }) => {
