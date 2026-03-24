@@ -25,6 +25,9 @@ export function createApplication<
     }
 
     class Application {
+        declare readonly __queryDefs: DefinitionsOf<TQueryClasses>;
+        declare readonly __mutationDefs: DefinitionsOf<TMutationClasses>;
+
         queryHandlers = new Map<string, HandlerInstance>();
         mutationHandlers = new Map<string, HandlerInstance>();
 
@@ -66,11 +69,14 @@ export function createApplication<
 
 type ApplicationInstance = ReturnType<typeof createApplication>;
 
+type MutationDefsOf<TApp extends ApplicationInstance> =
+    TApp extends { __mutationDefs: infer TDefs } ? TDefs : never;
+
 type MutationTypesOf<TApp extends ApplicationInstance> =
-    TApp extends { executeMutation(type: infer T extends string, input: any): any } ? T : never;
+    MutationDefsOf<TApp> extends OperationDefinition<infer T extends string, any, any> ? T : never;
 
 type MutationInputOf<TApp extends ApplicationInstance, TType extends string> =
-    TApp extends { executeMutation(type: TType, input: infer I): any } ? I : never;
+    Extract<MutationDefsOf<TApp>, { type: TType }> extends OperationDefinition<any, infer P, any> ? P : never;
 
 export function createClientMutators<TApp extends ApplicationInstance>(
     mutators: {

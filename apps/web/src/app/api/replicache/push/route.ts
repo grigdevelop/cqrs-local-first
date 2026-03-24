@@ -3,7 +3,7 @@ import { db } from '@/db/database';
 
 // Typed dispatch — keeps the route decoupled from handler internals
 const dispatch: Record<string, ((args: unknown) => Promise<unknown>) | undefined> = {
-    createTodo: (args) => app.executeMutation('createTodo', args as { text: string }),
+    createTodo: (args) => app.executeMutation('createTodo', args as { id: string; text: string }),
     toggleTodo: (args) => app.executeMutation('toggleTodo', args as { id: string }),
     deleteTodo: (args) => app.executeMutation('deleteTodo', args as { id: string }),
 };

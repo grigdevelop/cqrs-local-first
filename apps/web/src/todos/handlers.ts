@@ -1,6 +1,5 @@
 import { injectable } from 'inversify';
 import { createQueryHandler, createMutationHandler } from 'cqrs';
-import type { ExtractQueryInput, ExtractQueryOutput, ExtractMutationInput, ExtractMutationOutput } from 'cqrs';
 import { db } from '@/db/database';
 import { rowToTodo } from '@/db/schema';
 import {
@@ -8,11 +7,19 @@ import {
     createTodoOperation,
     toggleTodoOperation,
     deleteTodoOperation,
+    GetTodosInput,
+    GetTodosOutput,
+    CreateTodoInput,
+    CreateTodoOutput,
+    ToggleTodoInput,
+    ToggleTodoOutput,
+    DeleteTodoInput,
+    DeleteTodoOutput,
 } from './operations';
 
 @injectable()
 export class GetTodosHandler extends createQueryHandler(getTodosOperation) {
-    async execute(_input: ExtractQueryInput<typeof getTodosOperation>): Promise<ExtractQueryOutput<typeof getTodosOperation>> {
+    async execute(_input: GetTodosInput): Promise<GetTodosOutput> {
         const rows = await db.selectFrom('todos').selectAll().execute();
         return rows.map(rowToTodo);
     }
@@ -20,16 +27,16 @@ export class GetTodosHandler extends createQueryHandler(getTodosOperation) {
 
 @injectable()
 export class CreateTodoHandler extends createMutationHandler(createTodoOperation) {
-    async execute(input: ExtractMutationInput<typeof createTodoOperation>): Promise<ExtractMutationOutput<typeof createTodoOperation>> {
-        const id = crypto.randomUUID();
-        await db.insertInto('todos').values({ id, text: input.input.text, done: 0 }).execute();
-        return { id, text: input.input.text, done: false };
+    async execute(input: CreateTodoInput): Promise<CreateTodoOutput> {
+        const { id, text } = input.input;
+        await db.insertInto('todos').values({ id, text, done: 0 }).execute();
+        return { id, text, done: false };
     }
 }
 
 @injectable()
 export class ToggleTodoHandler extends createMutationHandler(toggleTodoOperation) {
-    async execute(input: ExtractMutationInput<typeof toggleTodoOperation>): Promise<ExtractMutationOutput<typeof toggleTodoOperation>> {
+    async execute(input: ToggleTodoInput): Promise<ToggleTodoOutput> {
         const row = await db
             .selectFrom('todos')
             .select('done')
@@ -46,7 +53,7 @@ export class ToggleTodoHandler extends createMutationHandler(toggleTodoOperation
 
 @injectable()
 export class DeleteTodoHandler extends createMutationHandler(deleteTodoOperation) {
-    async execute(input: ExtractMutationInput<typeof deleteTodoOperation>): Promise<ExtractMutationOutput<typeof deleteTodoOperation>> {
+    async execute(input: DeleteTodoInput): Promise<DeleteTodoOutput> {
         await db.deleteFrom('todos').where('id', '=', input.input.id).execute();
     }
 }

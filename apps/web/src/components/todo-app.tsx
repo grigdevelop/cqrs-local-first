@@ -3,22 +3,22 @@
 import { useEffect, useRef, useState } from 'react';
 import { Replicache } from 'replicache';
 import { useSubscribe } from 'replicache-react';
-import type { WriteTransaction } from 'replicache';
 import type { Todo } from '@/db/schema';
+import type { Application } from '@/todos/app';
+import { createClientMutators } from 'cqrs';
 
-const mutators = {
-    createTodo: async (tx: WriteTransaction, args: { text: string }) => {
-        const id = crypto.randomUUID();
-        await tx.set(`todo/${id}`, { id, text: args.text, done: false });
+const mutators = createClientMutators<Application>({
+    createTodo: async (tx, args) => {
+        await tx.set(`todo/${args.id}`, { id: args.id, text: args.text, done: false });
     },
-    toggleTodo: async (tx: WriteTransaction, args: { id: string }) => {
+    toggleTodo: async (tx, args) => {
         const todo = (await tx.get(`todo/${args.id}`)) as Todo | undefined;
         if (todo) await tx.set(`todo/${args.id}`, { ...todo, done: !todo.done });
     },
-    deleteTodo: async (tx: WriteTransaction, args: { id: string }) => {
+    deleteTodo: async (tx, args) => {
         await tx.del(`todo/${args.id}`);
     },
-};
+});
 
 type Rep = Replicache<typeof mutators>;
 
@@ -51,7 +51,7 @@ export function TodoApp() {
         e.preventDefault();
         const text = inputRef.current?.value.trim();
         if (!text || !rep) return;
-        rep.mutate.createTodo({ text });
+        rep.mutate.createTodo({ id: crypto.randomUUID(), text });
         if (inputRef.current) inputRef.current.value = '';
     }
 
