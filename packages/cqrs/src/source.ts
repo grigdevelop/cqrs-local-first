@@ -2,6 +2,7 @@ import { z } from "zod";
 import { injectable, inject } from "inversify";
 import { createQuery, createQueryHandler, ExtractQueryInput, ExtractQueryOutput } from "./query";
 import { createMutation, createMutationHandler, ExtractMutationInput, ExtractMutationOutput } from './mutation';
+import type { WriteTransaction } from "replicache";
 import { createApplication } from "./application";
 
 // ----
@@ -64,6 +65,10 @@ class TestMutationHandler extends createMutationHandler(testMutation) {
     async execute(input: CreateTestMutationInput): Promise<CreateTestMutationOutput> {
         this.logger.log(`executing testMutation with id: ${input.input.id}`);
         return true;
+    }
+
+    async mutate(tx: WriteTransaction, input: CreateTestMutationInput['input']): Promise<void> {
+        await tx.set(`item/${input.id}`, { id: input.id, value: input.value });
     }
 }
 

@@ -4,6 +4,7 @@ import { injectable, inject } from 'inversify';
 import { createQuery, createQueryHandler, ExtractQueryInput, ExtractQueryOutput } from './query';
 import { createMutation, createMutationHandler, ExtractMutationInput, ExtractMutationOutput } from './mutation';
 import { createApplication } from './application';
+import type { WriteTransaction } from 'replicache';
 
 // ---- shared operation definitions ----
 
@@ -38,6 +39,10 @@ type AddOutput = ExtractMutationOutput<typeof addMutation>;
 class AddMutationHandler extends createMutationHandler(addMutation) {
     async execute(input: AddInput): Promise<AddOutput> {
         return input.input.a + input.input.b;
+    }
+
+    async mutate(tx: WriteTransaction, input: AddInput['input']): Promise<void> {
+        await tx.set(`sum`, input.a + input.b);
     }
 }
 

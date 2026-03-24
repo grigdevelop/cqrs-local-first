@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(npm install:*)",
-      "Bash(npx vitest:*)"
+      "Bash(npx vitest:*)",
+      "Bash(find C:/Projects/training/local-first-app-v2/node_modules/replicache -name *.d.ts)",
+      "Bash(grep:*)"
     ]
   }
 }
