@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "compile": "tsc --noEmit"
   },
   "dependencies": {
     "better-sqlite3": "^12.8.0",

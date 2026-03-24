@@ -1,6 +1,6 @@
 import { injectable } from 'inversify';
 import { createQueryHandler, createMutationHandler } from 'cqrs';
-import { db, getNextVersion } from '@/db/database';
+import { db } from '@/db/database';
 import { rowToTodo } from '@/db/schema';
 import {
     getTodosOperation,
@@ -29,8 +29,9 @@ export class GetTodosHandler extends createQueryHandler(getTodosOperation) {
 export class CreateTodoHandler extends createMutationHandler(createTodoOperation) {
     async execute(input: CreateTodoInput): Promise<CreateTodoOutput> {
         const { id, text } = input.input;
-        const version = getNextVersion();
-        await db.insertInto('todos').values({ id, text, done: 0, deleted: 0, replicache_version: version }).execute();
+        // replicache_version is left at 0; the push route stamps it inside its
+        // atomic transaction after the handler returns.
+        await db.insertInto('todos').values({ id, text, done: 0, deleted: 0, replicache_version: 0 }).execute();
         return { id, text, done: false };
     }
 }
@@ -45,10 +46,9 @@ export class ToggleTodoHandler extends createMutationHandler(toggleTodoOperation
             .where('deleted', '=', 0)
             .executeTakeFirst();
         if (!row) return;
-        const version = getNextVersion();
         await db
             .updateTable('todos')
-            .set({ done: row.done ? 0 : 1, replicache_version: version })
+            .set({ done: row.done ? 0 : 1 })
             .where('id', '=', input.input.id)
             .execute();
     }
@@ -57,13 +57,11 @@ export class ToggleTodoHandler extends createMutationHandler(toggleTodoOperation
 @injectable()
 export class DeleteTodoHandler extends createMutationHandler(deleteTodoOperation) {
     async execute(input: DeleteTodoInput): Promise<DeleteTodoOutput> {
-        const version = getNextVersion();
         // Soft delete: keep the row so the pull handler can emit a `del` patch op
-        // for clients that haven't synced yet. A hard DELETE would leave those
-        // clients with a stale key they'd never be told to remove.
+        // for clients that haven't synced yet.
         await db
             .updateTable('todos')
-            .set({ deleted: 1, replicache_version: version })
+            .set({ deleted: 1 })
             .where('id', '=', input.input.id)
             .execute();
     }

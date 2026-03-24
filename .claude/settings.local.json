@@ -6,7 +6,8 @@
       "Bash(find C:/Projects/training/local-first-app-v2/node_modules/replicache -name *.d.ts)",
       "Bash(grep:*)",
       "Bash(find C:Projectstraininglocal-first-app-v2/apps/web/node_modules/next/dist/docs -type f -name *.md -o -name *.txt -o -name *.json)",
-      "Bash(npx next:*)"
+      "Bash(npx next:*)",
+      "Bash(npm run:*)"
     ]
   }
 }
