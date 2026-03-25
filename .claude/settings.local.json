@@ -7,7 +7,10 @@
       "Bash(grep:*)",
       "Bash(find C:Projectstraininglocal-first-app-v2/apps/web/node_modules/next/dist/docs -type f -name *.md -o -name *.txt -o -name *.json)",
       "Bash(npx next:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(npx playwright:*)",
+      "Bash(node -e \"const r = require\\(''./node_modules/replicache/package.json''\\); console.log\\(''replicache version:'', r.version\\)\")",
+      "Bash(find C:/Projects/training/local-first-app-v2 -path */replicache/package.json -not -path */node_modules/*/node_modules/*)"
     ]
   }
 }

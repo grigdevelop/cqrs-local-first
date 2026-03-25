@@ -14,6 +14,11 @@ export interface ReplicacheClientTable {
     client_id: string;
     client_group_id: string;
     last_mutation_id: number;
+    // Server version at which last_mutation_id was last updated.
+    // The pull route uses this to return only newly-confirmed clients in
+    // lastMutationIDChanges, preventing the "cookie unchanged but
+    // lastMutationIDChanges non-empty" Replicache warning.
+    confirmed_at_version: number;
 }
 
 // Single-row table holding the global server version counter.

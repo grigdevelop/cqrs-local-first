@@ -42,6 +42,7 @@ sqlite.exec(`
 // Migrations for databases created before these columns existed.
 const migrations: string[] = [
     `ALTER TABLE replicache_clients ADD COLUMN client_group_id TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE replicache_clients ADD COLUMN confirmed_at_version INTEGER NOT NULL DEFAULT 0`,
     `ALTER TABLE todos ADD COLUMN deleted INTEGER NOT NULL DEFAULT 0`,
     `ALTER TABLE todos ADD COLUMN replicache_version INTEGER NOT NULL DEFAULT 0`,
 ];
@@ -77,11 +78,12 @@ const _stampTodo = sqlite.prepare(
     'UPDATE todos SET replicache_version = ? WHERE id = ?'
 );
 const _upsertClient = sqlite.prepare(`
-    INSERT INTO replicache_clients (client_id, client_group_id, last_mutation_id)
-    VALUES (?, ?, ?)
+    INSERT INTO replicache_clients (client_id, client_group_id, last_mutation_id, confirmed_at_version)
+    VALUES (?, ?, ?, ?)
     ON CONFLICT (client_id) DO UPDATE SET
-        client_group_id  = excluded.client_group_id,
-        last_mutation_id = excluded.last_mutation_id
+        client_group_id      = excluded.client_group_id,
+        last_mutation_id     = excluded.last_mutation_id,
+        confirmed_at_version = excluded.confirmed_at_version
 `);
 
 interface CommitMutationParams {
@@ -98,7 +100,7 @@ export const commitMutation = sqlite.transaction(
         _incVersion.run();
         const { version } = _getVersion.get()!;
         if (affectedId !== null) _stampTodo.run(version, affectedId);
-        _upsertClient.run(clientID, clientGroupID, mutationId);
+        _upsertClient.run(clientID, clientGroupID, mutationId, version);
     }
 );
 
