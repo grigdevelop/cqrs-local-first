@@ -11,6 +11,10 @@ const dbRef = vi.hoisted((): { sqlite: Database.Database | null } => ({ sqlite: 
 vi.mock('@/db/database', async () => {
     const { default: SQLite } = await import('better-sqlite3');
     const { Kysely, SqliteDialect } = await import('kysely');
+    // Import the factory directly — @/db/commit-mutation is NOT mocked, so this
+    // is the real production logic. Any change to buildCommitMutation is
+    // automatically reflected in these tests.
+    const { buildCommitMutation } = await import('@/db/commit-mutation');
 
     const sqlite = new SQLite(':memory:');
 
@@ -23,9 +27,9 @@ vi.mock('@/db/database', async () => {
             replicache_version INTEGER NOT NULL DEFAULT 0
         );
         CREATE TABLE replicache_clients (
-            client_id           TEXT    PRIMARY KEY,
-            client_group_id     TEXT    NOT NULL DEFAULT '',
-            last_mutation_id    INTEGER NOT NULL DEFAULT 0,
+            client_id            TEXT    PRIMARY KEY,
+            client_group_id      TEXT    NOT NULL DEFAULT '',
+            last_mutation_id     INTEGER NOT NULL DEFAULT 0,
             confirmed_at_version INTEGER NOT NULL DEFAULT 0
         );
         CREATE TABLE replicache_server_version (
@@ -38,39 +42,7 @@ vi.mock('@/db/database', async () => {
     dbRef.sqlite = sqlite;
 
     const db = new Kysely({ dialect: new SqliteDialect({ database: sqlite }) });
-
-    // Mirror the production commitMutation — same synchronous transaction logic.
-    const _incVersion = sqlite.prepare(
-        'UPDATE replicache_server_version SET version = version + 1 WHERE id = 1'
-    );
-    const _getVersion = sqlite.prepare(
-        'SELECT version FROM replicache_server_version WHERE id = 1'
-    );
-    const _stampTodo = sqlite.prepare(
-        'UPDATE todos SET replicache_version = ? WHERE id = ?'
-    );
-    const _upsertClient = sqlite.prepare(`
-        INSERT INTO replicache_clients (client_id, client_group_id, last_mutation_id, confirmed_at_version)
-        VALUES (?, ?, ?, ?)
-        ON CONFLICT (client_id) DO UPDATE SET
-            client_group_id      = excluded.client_group_id,
-            last_mutation_id     = excluded.last_mutation_id,
-            confirmed_at_version = excluded.confirmed_at_version
-    `);
-
-    const commitMutation = sqlite.transaction(
-        ({ clientID, clientGroupID, mutationId, affectedId }: {
-            clientID: string;
-            clientGroupID: string;
-            mutationId: number;
-            affectedId: string | null;
-        }) => {
-            _incVersion.run();
-            const { version } = _getVersion.get() as { version: number };
-            if (affectedId !== null) _stampTodo.run(version, affectedId);
-            _upsertClient.run(clientID, clientGroupID, mutationId, version);
-        }
-    );
+    const commitMutation = buildCommitMutation(sqlite);
 
     return { db, commitMutation };
 });
