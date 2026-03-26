@@ -1,6 +1,6 @@
 'use client';
 
-import { AuthShell, ApplicationShell, type Credentials } from 'features';
+import { AuthModuleShell, ApplicationShell, type Credentials } from 'features';
 import { useEffect, useState } from 'react';
 
 type SessionUser = {
@@ -81,7 +81,7 @@ export default function TodosPageClient() {
 
     if (!user) {
         return (
-            <AuthShell
+            <AuthModuleShell
                 mounted={mounted}
                 error={error}
                 onLogin={(credentials) => handleAuthSubmit('login', credentials)}

@@ -1,18 +1,11 @@
 'use client';
 
 import { HashRouter, MemoryRouter, Navigate, NavLink, Route, Routes } from 'react-router-dom';
-import type { Credentials } from '../model';
-import { LoginRoute } from './login-route';
-import { RegisterRoute } from './register-route';
+import type { AuthModuleShellProps } from '../application';
+import { LoginRouteView } from './login-route-view';
+import { RegisterRouteView } from './register-route-view';
 
-type AuthShellProps = {
-    error?: string | null;
-    mounted?: boolean;
-    onLogin: (credentials: Credentials) => Promise<void> | void;
-    onRegister: (credentials: Credentials) => Promise<void> | void;
-};
-
-function AuthLayout() {
+function AuthHeroPanel() {
     return (
         <div className="card border border-primary/10 bg-primary text-primary-content shadow-2xl">
             <div className="card-body justify-between">
@@ -41,11 +34,11 @@ function AuthLayout() {
     );
 }
 
-function AuthScreen({ error, onLogin, onRegister }: Omit<AuthShellProps, 'mounted'>) {
+function AuthModuleScreen({ error, onLogin, onRegister }: Omit<AuthModuleShellProps, 'mounted'>) {
     return (
         <main className="mx-auto flex min-h-screen w-full max-w-6xl items-center justify-center px-4 py-10">
             <section className="grid w-full max-w-5xl gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-                <AuthLayout />
+                <AuthHeroPanel />
                 <section>
                     <div className="tabs tabs-box mb-2 bg-base-200 p-1">
                         <NavLink to="/register" end className={({ isActive }) => `tab flex-1 rounded-lg ${isActive ? 'tab-active bg-base-100 shadow-sm' : ''}`}>
@@ -58,8 +51,8 @@ function AuthScreen({ error, onLogin, onRegister }: Omit<AuthShellProps, 'mounte
 
                     <Routes>
                         <Route index element={<Navigate to="/register" replace />} />
-                        <Route path="/register" element={<RegisterRoute error={error} onSubmit={onRegister} />} />
-                        <Route path="/login" element={<LoginRoute error={error} onSubmit={onLogin} />} />
+                        <Route path="/register" element={<RegisterRouteView error={error} onSubmit={onRegister} />} />
+                        <Route path="/login" element={<LoginRouteView error={error} onSubmit={onLogin} />} />
                         <Route path="*" element={<Navigate to="/register" replace />} />
                     </Routes>
                 </section>
@@ -68,18 +61,18 @@ function AuthScreen({ error, onLogin, onRegister }: Omit<AuthShellProps, 'mounte
     );
 }
 
-export function AuthShell({ error, mounted = true, onLogin, onRegister }: AuthShellProps) {
+export function AuthModuleShell({ error, mounted = true, onLogin, onRegister }: AuthModuleShellProps) {
     if (!mounted) {
         return (
             <MemoryRouter initialEntries={['/register']}>
-                <AuthScreen error={error} onLogin={onLogin} onRegister={onRegister} />
+                <AuthModuleScreen error={error} onLogin={onLogin} onRegister={onRegister} />
             </MemoryRouter>
         );
     }
 
     return (
         <HashRouter>
-            <AuthScreen error={error} onLogin={onLogin} onRegister={onRegister} />
+            <AuthModuleScreen error={error} onLogin={onLogin} onRegister={onRegister} />
         </HashRouter>
     );
 }

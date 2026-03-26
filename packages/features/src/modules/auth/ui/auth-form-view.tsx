@@ -3,17 +3,16 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import type { AuthMode } from '../application';
 import { CredentialsSchema, type Credentials } from '../model';
 
-export type AuthMode = 'login' | 'register';
-
-type AuthFormCardProps = {
+type AuthFormViewProps = {
     mode: AuthMode;
     error?: string | null;
     onSubmit: (mode: AuthMode, credentials: Credentials) => Promise<void> | void;
 };
 
-export function AuthFormCard({ mode, error, onSubmit }: AuthFormCardProps) {
+export function AuthFormView({ mode, error, onSubmit }: AuthFormViewProps) {
     const {
         register,
         handleSubmit,

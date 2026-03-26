@@ -1,4 +1,4 @@
-export { AuthShell } from './auth-shell';
-export { LoginRoute } from './login-route';
-export { RegisterRoute } from './register-route';
-export type { AuthMode } from './auth-form-card';
+export { AuthModuleShell } from './auth-module-shell';
+export { AuthFormView } from './auth-form-view';
+export { LoginRouteView } from './login-route-view';
+export { RegisterRouteView } from './register-route-view';
