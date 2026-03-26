@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { HashRouter, NavLink, Navigate, Outlet, Route, Routes } from 'react-router-dom';
-import { TodoApp, type TodoFilter } from './todo-app';
+import { TodoModuleView, type TodoFilter } from './todo-module-view';
 
 const views: Array<{ filter: TodoFilter; href: string; label: string }> = [
     { filter: 'all', href: '/', label: 'All' },
@@ -10,21 +10,21 @@ const views: Array<{ filter: TodoFilter; href: string; label: string }> = [
     { filter: 'completed', href: '/completed', label: 'Completed' },
 ];
 
-type TodoRouteLayoutProps = {
+type TodoModuleLayoutProps = {
     children?: ReactNode;
     useRouterLinks?: boolean;
 };
 
-function TodoRouteLayout({ children, useRouterLinks = true }: TodoRouteLayoutProps) {
+function TodoModuleLayout({ children, useRouterLinks = true }: TodoModuleLayoutProps) {
     return (
         <section className="mx-auto w-full max-w-4xl">
             <header className="mb-6 rounded-box border border-base-300 bg-base-100/90 p-6 shadow-xl backdrop-blur">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                     <div>
-                        <div className="badge badge-outline mb-3">Feature package</div>
+                        <div className="badge badge-outline mb-3">Application module</div>
                         <h1 className="text-4xl font-black tracking-tight">Todos</h1>
                         <p className="mt-2 max-w-2xl text-sm text-base-content/70">
-                            Switch between all, active, and completed todos without leaving the feature shell.
+                            Todo management is one module inside the main application shell.
                         </p>
                     </div>
                     <div className="stats stats-horizontal border border-base-300 bg-base-200 shadow-none">
@@ -33,8 +33,8 @@ function TodoRouteLayout({ children, useRouterLinks = true }: TodoRouteLayoutPro
                             <div className="stat-value text-2xl">3</div>
                         </div>
                         <div className="stat px-5 py-4">
-                            <div className="stat-title">Mode</div>
-                            <div className="stat-value text-2xl">Sync</div>
+                            <div className="stat-title">Module</div>
+                            <div className="stat-value text-2xl">Todos</div>
                         </div>
                     </div>
                 </div>
@@ -69,7 +69,7 @@ function TodoRouteLayout({ children, useRouterLinks = true }: TodoRouteLayoutPro
     );
 }
 
-export function TodoRouter() {
+export function TodoModuleRoutes() {
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
@@ -78,19 +78,19 @@ export function TodoRouter() {
 
     if (!mounted) {
         return (
-            <TodoRouteLayout useRouterLinks={false}>
-                <TodoApp filter="all" />
-            </TodoRouteLayout>
+            <TodoModuleLayout useRouterLinks={false}>
+                <TodoModuleView filter="all" />
+            </TodoModuleLayout>
         );
     }
 
     return (
         <HashRouter>
             <Routes>
-                <Route element={<TodoRouteLayout />}>
-                    <Route index element={<TodoApp filter="all" />} />
-                    <Route path="active" element={<TodoApp filter="active" />} />
-                    <Route path="completed" element={<TodoApp filter="completed" />} />
+                <Route element={<TodoModuleLayout />}>
+                    <Route index element={<TodoModuleView filter="all" />} />
+                    <Route path="active" element={<TodoModuleView filter="active" />} />
+                    <Route path="completed" element={<TodoModuleView filter="completed" />} />
                 </Route>
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

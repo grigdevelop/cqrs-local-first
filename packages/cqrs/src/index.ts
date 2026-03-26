@@ -1,4 +1,13 @@
 export { createApplication, createClientMutators } from './application';
+export {
+    CqrsError,
+    HandlerNotFoundError,
+    ValidationError,
+    NotFoundError,
+    ConflictError,
+    UnauthorizedError,
+    ForbiddenError,
+} from './errors';
 export { createOperation } from './operation';
 export { createQuery, createQueryHandler } from './query';
 export { createMutation, createMutationHandler } from './mutation';

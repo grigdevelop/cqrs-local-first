@@ -4,6 +4,7 @@ import { injectable, inject } from 'inversify';
 import { createQuery, createQueryHandler, ExtractQueryInput, ExtractQueryOutput } from './query';
 import { createMutation, createMutationHandler, ExtractMutationInput, ExtractMutationOutput } from './mutation';
 import { createApplication, createClientMutators } from './application';
+import { HandlerNotFoundError, ValidationError } from './errors';
 import type { WriteTransaction } from 'replicache';
 
 // ---- shared operation definitions ----
@@ -73,10 +74,18 @@ describe('createApplication', () => {
             expect(result).toBe('hi');
         });
 
-        it('throws when no handler is registered for the query type', () => {
+        it('throws HandlerNotFoundError when no handler is registered for the query type', () => {
             const app = createApplication({});
             // @ts-expect-error — intentionally using unknown type
-            expect(() => app.executeQuery('unknown', {})).toThrow('No handler for query type: unknown');
+            expect(() => app.executeQuery('unknown', {})).toThrow(HandlerNotFoundError);
+            try {
+                // @ts-expect-error
+                app.executeQuery('unknown', {});
+            } catch (err) {
+                expect(err).toBeInstanceOf(HandlerNotFoundError);
+                expect((err as HandlerNotFoundError).kind).toBe('query');
+                expect((err as HandlerNotFoundError).operationType).toBe('unknown');
+            }
         });
     });
 
@@ -87,10 +96,18 @@ describe('createApplication', () => {
             expect(result).toBe(7);
         });
 
-        it('throws when no handler is registered for the mutation type', () => {
+        it('throws HandlerNotFoundError when no handler is registered for the mutation type', () => {
             const app = createApplication({});
             // @ts-expect-error — intentionally using unknown type
-            expect(() => app.executeMutation('unknown', {})).toThrow('No handler for mutation type: unknown');
+            expect(() => app.executeMutation('unknown', {})).toThrow(HandlerNotFoundError);
+            try {
+                // @ts-expect-error
+                app.executeMutation('unknown', {});
+            } catch (err) {
+                expect(err).toBeInstanceOf(HandlerNotFoundError);
+                expect((err as HandlerNotFoundError).kind).toBe('mutation');
+                expect((err as HandlerNotFoundError).operationType).toBe('unknown');
+            }
         });
     });
 
@@ -130,7 +147,7 @@ describe('createApplication', () => {
             expect((result as any).extra).toBeUndefined();
         });
 
-        it('throws a ZodError when query output fails validation', async () => {
+        it('throws ValidationError(phase=output) when query output fails validation', async () => {
             const badOutputQuery = createQuery('badOutput', z.void(), z.number());
             type BadOutputInput = ExtractQueryInput<typeof badOutputQuery>;
 
@@ -142,10 +159,14 @@ describe('createApplication', () => {
             }
 
             const app = createApplication({ queries: [BadOutputQueryHandler] });
-            await expect(app.executeQuery('badOutput', undefined)).rejects.toThrow();
+            await expect(app.executeQuery('badOutput', undefined)).rejects.toThrow(ValidationError);
+            await app.executeQuery('badOutput', undefined).catch(err => {
+                expect((err as ValidationError).phase).toBe('output');
+                expect((err as ValidationError).operationType).toBe('badOutput');
+            });
         });
 
-        it('throws a ZodError when mutation output fails validation', async () => {
+        it('throws ValidationError(phase=output) when mutation output fails validation', async () => {
             const badOutputMutation = createMutation('badOutputMut', z.void(), z.boolean());
             type BadOutputMutInput = ExtractMutationInput<typeof badOutputMutation>;
 
@@ -157,7 +178,11 @@ describe('createApplication', () => {
             }
 
             const app = createApplication({ mutations: [BadOutputMutationHandler] });
-            await expect(app.executeMutation('badOutputMut', undefined)).rejects.toThrow();
+            await expect(app.executeMutation('badOutputMut', undefined)).rejects.toThrow(ValidationError);
+            await app.executeMutation('badOutputMut', undefined).catch(err => {
+                expect((err as ValidationError).phase).toBe('output');
+                expect((err as ValidationError).operationType).toBe('badOutputMut');
+            });
         });
 
         it('strips unknown fields from mutation output', async () => {
@@ -184,14 +209,28 @@ describe('createApplication', () => {
             mutations: [AddMutationHandler],
         });
 
-        it('throws a ZodError when query input fails validation', () => {
+        it('throws ValidationError(phase=input) when query input fails validation', () => {
             // @ts-expect-error — intentionally passing wrong shape
-            expect(() => app.executeQuery('echo', { message: 123 })).toThrow();
+            expect(() => app.executeQuery('echo', { message: 123 })).toThrow(ValidationError);
+            try {
+                // @ts-expect-error
+                app.executeQuery('echo', { message: 123 });
+            } catch (err) {
+                expect((err as ValidationError).phase).toBe('input');
+                expect((err as ValidationError).operationType).toBe('echo');
+            }
         });
 
-        it('throws a ZodError when mutation input fails validation', () => {
+        it('throws ValidationError(phase=input) when mutation input fails validation', () => {
             // @ts-expect-error — intentionally passing wrong shape
-            expect(() => app.executeMutation('add', { a: 'not-a-number', b: 4 })).toThrow();
+            expect(() => app.executeMutation('add', { a: 'not-a-number', b: 4 })).toThrow(ValidationError);
+            try {
+                // @ts-expect-error
+                app.executeMutation('add', { a: 'not-a-number', b: 4 });
+            } catch (err) {
+                expect((err as ValidationError).phase).toBe('input');
+                expect((err as ValidationError).operationType).toBe('add');
+            }
         });
 
         it('strips unknown fields before passing input to the handler', async () => {

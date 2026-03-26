@@ -1,6 +1,22 @@
+import { ZodError } from "zod";
 import { Container } from "inversify";
 import type { WriteTransaction } from "replicache";
 import { HandlerInstance, HandlerClass, OperationDefinition } from "./operation";
+import { HandlerNotFoundError, ValidationError } from "./errors";
+
+function parseOrThrow<T>(
+    schema: { parse(v: unknown): T },
+    value: unknown,
+    phase: 'input' | 'output',
+    operationType: string,
+): T {
+    try {
+        return schema.parse(value);
+    } catch (err) {
+        if (err instanceof ZodError) throw new ValidationError(phase, operationType, err);
+        throw err;
+    }
+}
 
 type DefinitionsOf<T extends HandlerClass[]> = InstanceType<T[number]>['definition'];
 
@@ -49,10 +65,10 @@ export function createApplication<
             input: InputFor<DefinitionsOf<TQueryClasses>, TType>
         ): Promise<OutputFor<DefinitionsOf<TQueryClasses>, TType>> {
             const handler = this.queryHandlers.get(type);
-            if (!handler) throw new Error(`No handler for query type: ${type}`);
-            const validatedInput = handler.definition.input.parse(input);
+            if (!handler) throw new HandlerNotFoundError('query', type);
+            const validatedInput = parseOrThrow(handler.definition.input, input, 'input', type);
             return handler.execute({ type, input: validatedInput })
-                .then(result => handler.definition.output.parse(result)) as Promise<OutputFor<DefinitionsOf<TQueryClasses>, TType>>;
+                .then(result => parseOrThrow(handler.definition.output, result, 'output', type)) as Promise<OutputFor<DefinitionsOf<TQueryClasses>, TType>>;
         }
 
         executeMutation<TType extends DefinitionsOf<TMutationClasses>['type']>(
@@ -60,10 +76,10 @@ export function createApplication<
             input: InputFor<DefinitionsOf<TMutationClasses>, TType>
         ): Promise<OutputFor<DefinitionsOf<TMutationClasses>, TType>> {
             const handler = this.mutationHandlers.get(type);
-            if (!handler) throw new Error(`No handler for mutation type: ${type}`);
-            const validatedInput = handler.definition.input.parse(input);
+            if (!handler) throw new HandlerNotFoundError('mutation', type);
+            const validatedInput = parseOrThrow(handler.definition.input, input, 'input', type);
             return handler.execute({ type, input: validatedInput })
-                .then(result => handler.definition.output.parse(result)) as Promise<OutputFor<DefinitionsOf<TMutationClasses>, TType>>;
+                .then(result => parseOrThrow(handler.definition.output, result, 'output', type)) as Promise<OutputFor<DefinitionsOf<TMutationClasses>, TType>>;
         }
     }
     return new Application();

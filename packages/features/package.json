@@ -5,7 +5,8 @@
   "main": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./todos": "./src/todos/index.ts"
+    "./todos": "./src/modules/todos/index.ts",
+    "./modules/todos": "./src/modules/todos/index.ts"
   },
   "scripts": {
     "compile": "tsc --noEmit"

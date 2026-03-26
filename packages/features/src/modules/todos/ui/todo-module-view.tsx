@@ -4,10 +4,10 @@ import { createClientMutators } from 'cqrs';
 import { useEffect, useRef, useState } from 'react';
 import { Replicache } from 'replicache';
 import { useSubscribe } from 'replicache-react';
-import type { TodoApplication } from '../application/app';
+import type { TodoModuleApplication } from '../application/module';
 import type { Todo } from '../model/schema';
 
-const mutators = createClientMutators<TodoApplication>({
+const mutators = createClientMutators<TodoModuleApplication>({
     createTodo: async (tx, args) => {
         await tx.set(`todo/${args.id}`, { id: args.id, text: args.text, done: false });
     },
@@ -24,7 +24,7 @@ type Rep = Replicache<typeof mutators>;
 
 export type TodoFilter = 'all' | 'active' | 'completed';
 
-type TodoAppProps = {
+type TodoModuleViewProps = {
     filter?: TodoFilter;
 };
 
@@ -34,7 +34,7 @@ function matchesFilter(todo: Todo, filter: TodoFilter) {
     return true;
 }
 
-export function TodoApp({ filter = 'all' }: TodoAppProps) {
+export function TodoModuleView({ filter = 'all' }: TodoModuleViewProps) {
     const [rep, setRep] = useState<Rep | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -75,12 +75,7 @@ export function TodoApp({ filter = 'all' }: TodoAppProps) {
             <form onSubmit={handleSubmit} className="mb-6 flex flex-col gap-3 md:flex-row">
                 <label className="input input-bordered input-lg flex w-full items-center gap-3 md:flex-1">
                     <span className="text-base-content/40">+</span>
-                    <input
-                        ref={inputRef}
-                        placeholder="What needs to be done?"
-                        autoComplete="off"
-                        className="grow"
-                    />
+                    <input ref={inputRef} placeholder="What needs to be done?" autoComplete="off" className="grow" />
                 </label>
                 <button type="submit" className="btn btn-primary btn-lg md:w-auto">
                     Add
@@ -118,9 +113,7 @@ export function TodoApp({ filter = 'all' }: TodoAppProps) {
                                 <span className={`block text-base ${todo.done ? 'text-base-content/50 line-through' : 'text-base-content'}`}>
                                     {todo.text}
                                 </span>
-                                <span className="text-xs text-base-content/50">
-                                    {todo.done ? 'Completed task' : 'Active task'}
-                                </span>
+                                <span className="text-xs text-base-content/50">{todo.done ? 'Completed task' : 'Active task'}</span>
                             </div>
                             <div className="badge badge-outline">{todo.done ? 'Done' : 'Open'}</div>
                             <button

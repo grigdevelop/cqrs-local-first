@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { TodoRouter } from 'features/todos';
+import { TodoModuleRoutes } from 'features/todos';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { CredentialsSchema, type Credentials } from '@/auth/credentials';
@@ -232,7 +232,7 @@ export default function TodosPageClient() {
                     <span>{error}</span>
                 </div>
             ) : null}
-            <TodoRouter />
+            <TodoModuleRoutes />
         </main>
     );
 }

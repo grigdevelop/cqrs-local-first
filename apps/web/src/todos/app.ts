@@ -1,5 +1,5 @@
-import { createTodoApp } from 'features/todos';
+import { createTodoModule } from 'features/todos';
 import { db } from '@/db/database';
 
-export const app = createTodoApp(db);
-export type { TodoApplication as Application } from 'features/todos';
+export const app = createTodoModule(db);
+export type { TodoModuleApplication as Application } from 'features/todos';

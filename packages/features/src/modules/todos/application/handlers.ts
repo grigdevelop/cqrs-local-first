@@ -17,7 +17,7 @@ import {
     type ToggleTodoOutput,
 } from '../model/operations';
 
-export const DB = Symbol('DB');
+export const DB = Symbol('TODOS_DB');
 
 @injectable()
 export class GetTodosHandler extends createQueryHandler(getTodosOperation) {
