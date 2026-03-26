@@ -14,6 +14,13 @@ sqlite.exec(`
         done INTEGER NOT NULL DEFAULT 0
     );
 
+    CREATE TABLE IF NOT EXISTS users (
+        id            TEXT PRIMARY KEY,
+        email         TEXT NOT NULL UNIQUE,
+        password_hash TEXT NOT NULL,
+        created_at    TEXT NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS replicache_clients (
         client_id        TEXT    PRIMARY KEY,
         client_group_id  TEXT    NOT NULL DEFAULT '',
@@ -51,6 +58,9 @@ const migrations: string[] = [
 for (const sql of migrations) {
     try { sqlite.exec(sql); } catch { /* column already exists */ }
 }
+sqlite.exec(`
+    CREATE UNIQUE INDEX IF NOT EXISTS users_email_idx ON users (email);
+`);
 
 export const db = new Kysely<AppDatabase>({
     dialect: new SqliteDialect({ database: sqlite }),
@@ -75,4 +85,3 @@ export const commitMutation = buildSqliteCommit(
     syncedEntities.map(e => e.tableName),
 );
 export type { CommitMutationParams, AffectedRow } from 'replicache-sync';
-

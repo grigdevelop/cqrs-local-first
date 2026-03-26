@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type Database from 'better-sqlite3';
+import { getAuthCookieName, signJwt } from '@/auth/jwt';
 
 // ---------------------------------------------------------------------------
 // In-memory database shared across all tests in this file.
@@ -19,6 +20,12 @@ vi.mock('@/db/database', async () => {
     const sqlite = new SQLite(':memory:');
 
     sqlite.exec(`
+        CREATE TABLE users (
+            id                TEXT    PRIMARY KEY,
+            email             TEXT    NOT NULL UNIQUE,
+            password_hash     TEXT    NOT NULL,
+            created_at        TEXT    NOT NULL
+        );
         CREATE TABLE todos (
             id                TEXT    PRIMARY KEY,
             text              TEXT    NOT NULL,
@@ -60,7 +67,10 @@ const CLIENT_ID = 'client-1';
 function makeRequest(body: unknown): Request {
     return new Request('http://localhost', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+            'Content-Type': 'application/json',
+            Cookie: `${getAuthCookieName()}=${signJwt({ id: 'user-1', email: 'user@example.com' })}`,
+        },
         body: JSON.stringify(body),
     });
 }
@@ -85,9 +95,11 @@ function pullBody(cookie: number | null = null) {
 // Reset all tables to a clean state before each test.
 beforeEach(() => {
     dbRef.sqlite!.exec(`
+        DELETE FROM users;
         DELETE FROM todos;
         DELETE FROM replicache_clients;
         UPDATE replicache_server_version SET version = 1;
+        INSERT INTO users (id, email, password_hash, created_at) VALUES ('user-1', 'user@example.com', 'hash', '2026-01-01T00:00:00.000Z');
     `);
 });
 

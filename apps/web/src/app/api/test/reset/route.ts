@@ -10,6 +10,7 @@ export async function POST() {
     }
 
     await db.deleteFrom('todos').execute();
+    await db.deleteFrom('users').execute();
     await db.deleteFrom('replicache_clients').execute();
     // Reset version to the current timestamp rather than a small integer.
     // Replicache requires cookies to be monotonically non-decreasing: if the

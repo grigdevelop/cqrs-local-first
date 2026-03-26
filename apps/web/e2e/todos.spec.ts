@@ -9,7 +9,10 @@ import { test, expect } from '@playwright/test';
 test.beforeEach(async ({ request, page }) => {
     await request.post('/api/test/reset');
     await page.goto('/');
-    await expect(page.getByText(/no todos yet/i)).toBeVisible();
+    await page.getByPlaceholder('Email').fill('user@example.com');
+    await page.getByPlaceholder('Password').fill('password123');
+    await page.locator('form').getByRole('button', { name: 'Create account' }).click();
+    await expect(page.getByText(/no todos/i)).toBeVisible();
 });
 
 // ---------------------------------------------------------------------------
@@ -42,7 +45,7 @@ test('deletes a todo', async ({ page }) => {
     await page.getByRole('button', { name: 'Delete todo' }).click();
 
     await expect(page.getByText('Temporary task')).not.toBeVisible();
-    await expect(page.getByText(/no todos yet/i)).toBeVisible();
+    await expect(page.getByText(/no todos/i)).toBeVisible();
 });
 
 test('delete is confirmed by the server (push completes, reload syncs state)', async ({ page }) => {
@@ -73,7 +76,7 @@ test('delete is confirmed by the server (push completes, reload syncs state)', a
     await page.reload();
 
     await expect(page.getByText('Server confirm me')).not.toBeVisible();
-    await expect(page.getByText(/no todos yet/i)).toBeVisible();
+    await expect(page.getByText(/no todos/i)).toBeVisible();
 });
 
 test('deletes the correct todo when multiple todos exist', async ({ page }) => {
@@ -143,12 +146,12 @@ test('deleted todos do not reappear after page reload', async ({ page }) => {
     await page.getByPlaceholder('What needs to be done?').fill('Gone');
     await page.getByRole('button', { name: 'Add' }).click();
     await page.getByRole('button', { name: 'Delete todo' }).click();
-    await expect(page.getByText(/no todos yet/i)).toBeVisible();
+    await expect(page.getByText(/no todos/i)).toBeVisible();
 
     await page.reload();
 
     await expect(page.getByText('Gone')).not.toBeVisible();
-    await expect(page.getByText(/no todos yet/i)).toBeVisible();
+    await expect(page.getByText(/no todos/i)).toBeVisible();
 });
 
 // ---------------------------------------------------------------------------
