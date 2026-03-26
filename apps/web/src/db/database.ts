@@ -2,7 +2,8 @@ import SQLite from 'better-sqlite3';
 import { Kysely, SqliteDialect } from 'kysely';
 import path from 'path';
 import type { AppDatabase } from './schema';
-import { buildCommitMutation } from './commit-mutation';
+import { buildSqliteCommit } from 'replicache-sync';
+import { syncedEntities } from './entity-registry';
 
 const sqlite = new SQLite(path.join(process.cwd(), 'todos.db'));
 
@@ -69,6 +70,9 @@ export const db = new Kysely<AppDatabase>({
 // can read uncommitted writes on that connection mid-transaction.
 // ---------------------------------------------------------------------------
 
-export const commitMutation = buildCommitMutation(sqlite);
-export type { CommitMutationParams } from './commit-mutation';
+export const commitMutation = buildSqliteCommit(
+    sqlite,
+    syncedEntities.map(e => e.tableName),
+);
+export type { CommitMutationParams, AffectedRow } from 'replicache-sync';
 

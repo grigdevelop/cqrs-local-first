@@ -39,6 +39,8 @@ export interface AppDatabase {
 export type TodoRow = Selectable<TodoTable>;
 export type NewTodo = Insertable<TodoTable>;
 
+export type { SyncedEntity } from 'replicache-sync';
+
 // ---- Domain types (boolean done, safe to import on client) ----
 
 export type Todo = {

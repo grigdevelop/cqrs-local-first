@@ -11,10 +11,10 @@ const dbRef = vi.hoisted((): { sqlite: Database.Database | null } => ({ sqlite: 
 vi.mock('@/db/database', async () => {
     const { default: SQLite } = await import('better-sqlite3');
     const { Kysely, SqliteDialect } = await import('kysely');
-    // Import the factory directly — @/db/commit-mutation is NOT mocked, so this
-    // is the real production logic. Any change to buildCommitMutation is
+    // Import the factory directly from the library — not mocked, so this is
+    // the real production logic. Any change to buildSqliteCommit is
     // automatically reflected in these tests.
-    const { buildCommitMutation } = await import('@/db/commit-mutation');
+    const { buildSqliteCommit } = await import('replicache-sync');
 
     const sqlite = new SQLite(':memory:');
 
@@ -42,7 +42,7 @@ vi.mock('@/db/database', async () => {
     dbRef.sqlite = sqlite;
 
     const db = new Kysely({ dialect: new SqliteDialect({ database: sqlite }) });
-    const commitMutation = buildCommitMutation(sqlite);
+    const commitMutation = buildSqliteCommit(sqlite, ['todos']);
 
     return { db, commitMutation };
 });

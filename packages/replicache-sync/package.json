@@ -1,0 +1,23 @@
+{
+  "name": "replicache-sync",
+  "version": "1.0.0",
+  "description": "Database-type-independent Replicache sync helpers (pull, push, SQLite commit adapter)",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "compile": "tsc --noEmit"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "kysely": "^0.28.14",
+    "replicache": "^15.3.0"
+  },
+  "devDependencies": {
+    "better-sqlite3": "^12.8.0",
+    "@types/better-sqlite3": "^7.6.13",
+    "typescript": "^6.0.2"
+  }
+}

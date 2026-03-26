@@ -1,8 +1,11 @@
 import { z } from "zod";
 import { injectable, inject } from "inversify";
+import type { Selectable, Insertable, Updateable } from 'kysely';
+
 import { createQuery, createQueryHandler, ExtractQueryInput, ExtractQueryOutput } from "./query";
 import { createMutation, createMutationHandler, ExtractMutationInput, ExtractMutationOutput } from './mutation';
 import { createApplication, createClientMutators } from "./application";
+import { ZodSchemaToKyselyTable, BaseSyncedEntitySchema } from "./entities";
 
 // ----
 // Example services
@@ -96,3 +99,15 @@ const mutators = createClientMutators<typeof app>({
         await tx.set(`item/${input.id}`, { id: input.id, value: input.value });
     }
 });
+
+// Example usage with Zod schemas
+const todoSchema = BaseSyncedEntitySchema.extend({
+    title: z.string(),
+    completed: z.boolean(),
+});
+
+type TodoTable = ZodSchemaToKyselyTable<typeof todoSchema>;
+type TodoSelectable = Selectable<TodoTable>;
+type TodoInsertable = Insertable<TodoTable>;
+type TodoUpdateable = Updateable<TodoTable>;
+

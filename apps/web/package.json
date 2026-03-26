@@ -13,6 +13,7 @@
   "dependencies": {
     "better-sqlite3": "^12.8.0",
     "cqrs": "*",
+    "replicache-sync": "*",
     "kysely": "^0.28.14",
     "next": "16.2.1",
     "react": "19.2.4",
