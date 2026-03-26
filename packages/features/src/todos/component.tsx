@@ -1,11 +1,11 @@
 'use client';
 
+import { createClientMutators } from 'cqrs';
 import { useEffect, useRef, useState } from 'react';
 import { Replicache } from 'replicache';
 import { useSubscribe } from 'replicache-react';
-import { createClientMutators } from 'cqrs';
-import type { Todo } from './schema';
 import type { TodoApplication } from './app';
+import type { Todo } from './schema';
 
 const mutators = createClientMutators<TodoApplication>({
     createTodo: async (tx, args) => {
@@ -22,7 +22,19 @@ const mutators = createClientMutators<TodoApplication>({
 
 type Rep = Replicache<typeof mutators>;
 
-export function TodoApp() {
+export type TodoFilter = 'all' | 'active' | 'completed';
+
+type TodoAppProps = {
+    filter?: TodoFilter;
+};
+
+function matchesFilter(todo: Todo, filter: TodoFilter) {
+    if (filter === 'active') return !todo.done;
+    if (filter === 'completed') return todo.done;
+    return true;
+}
+
+export function TodoApp({ filter = 'all' }: TodoAppProps) {
     const [rep, setRep] = useState<Rep | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -35,7 +47,9 @@ export function TodoApp() {
             mutators,
         });
         setRep(r);
-        return () => { r.close(); };
+        return () => {
+            r.close();
+        };
     }, []);
 
     const todos = useSubscribe(
@@ -46,6 +60,7 @@ export function TodoApp() {
         },
         { default: [] as Todo[] }
     );
+    const visibleTodos = todos.filter((todo) => matchesFilter(todo, filter));
 
     function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
@@ -56,10 +71,8 @@ export function TodoApp() {
     }
 
     return (
-        <main className="max-w-lg mx-auto mt-16 px-4">
-            <h1 className="text-3xl font-bold mb-8">Todos</h1>
-
-            <form onSubmit={handleSubmit} className="flex gap-2 mb-6">
+        <>
+            <form onSubmit={handleSubmit} className="mb-6 flex gap-2">
                 <input
                     ref={inputRef}
                     placeholder="What needs to be done?"
@@ -68,39 +81,39 @@ export function TodoApp() {
                 />
                 <button
                     type="submit"
-                    className="rounded-lg bg-blue-500 px-5 py-2 text-white font-medium hover:bg-blue-600 transition-colors"
+                    className="rounded-lg bg-blue-500 px-5 py-2 font-medium text-white transition-colors hover:bg-blue-600"
                 >
                     Add
                 </button>
             </form>
 
-            {todos.length === 0 ? (
-                <p className="text-center text-gray-400 py-8">No todos yet. Add one above!</p>
+            {visibleTodos.length === 0 ? (
+                <p className="py-8 text-center text-gray-400">No todos in this view yet.</p>
             ) : (
                 <ul className="space-y-2">
-                    {todos.map((todo) => (
+                    {visibleTodos.map((todo) => (
                         <li key={todo.id} className="flex items-center gap-3 rounded-lg border px-4 py-3">
                             <button
                                 onClick={() => rep?.mutate.toggleTodo({ id: todo.id })}
                                 className="text-xl leading-none"
                                 aria-label={todo.done ? 'Mark incomplete' : 'Mark complete'}
                             >
-                                {todo.done ? '✅' : '⬜'}
+                                {todo.done ? '\u2705' : '\u2B1C'}
                             </button>
-                            <span className={`flex-1 ${todo.done ? 'line-through text-gray-400' : ''}`}>
+                            <span className={`flex-1 ${todo.done ? 'text-gray-400 line-through' : ''}`}>
                                 {todo.text}
                             </span>
                             <button
                                 onClick={() => rep?.mutate.deleteTodo({ id: todo.id })}
-                                className="text-gray-300 hover:text-red-500 text-xl leading-none transition-colors"
+                                className="text-xl leading-none text-gray-300 transition-colors hover:text-red-500"
                                 aria-label="Delete todo"
                             >
-                                ×
+                                {'\u00D7'}
                             </button>
                         </li>
                     ))}
                 </ul>
             )}
-        </main>
+        </>
     );
 }

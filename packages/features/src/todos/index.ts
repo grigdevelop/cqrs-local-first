@@ -23,3 +23,5 @@ export { createTodoApp } from './app';
 export type { TodoApplication } from './app';
 export { todoEntity } from './entity';
 export { TodoApp } from './component';
+export type { TodoFilter } from './component';
+export { TodoRouter } from './routes';

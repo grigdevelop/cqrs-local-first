@@ -1,5 +1,5 @@
-import { TodoApp } from 'features/todos';
+import { TodoRouter } from 'features/todos';
 
 export default function Page() {
-    return <TodoApp />;
+    return <TodoRouter />;
 }
