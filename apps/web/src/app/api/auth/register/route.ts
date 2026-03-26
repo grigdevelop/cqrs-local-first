@@ -28,7 +28,7 @@ export async function POST(req: Request) {
 
     await db.insertInto('users').values(user).execute();
 
-    const response = NextResponse.json({ user: { id: user.id, email: user.email } });
+    const response = NextResponse.json({ user: { id: user.id, email: user.email, created_at: user.created_at } });
     response.cookies.set(getAuthCookieName(), signJwt(user), getAuthCookieOptions());
     return response;
 }

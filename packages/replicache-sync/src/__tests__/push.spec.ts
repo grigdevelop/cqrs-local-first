@@ -13,11 +13,12 @@ function makePush(
         profileID: 'p1',
         clientGroupID: CLIENT_GROUP,
         pushVersion: 1,
+        schemaVersion: '',
         mutations: mutations.map(({ clientID = CLIENT_ID, ...rest }) => ({
             clientID,
             timestamp: Date.now(),
             ...rest,
-        })),
+        })) as PushRequestV1['mutations'],
     };
 }
 

@@ -1,6 +1,19 @@
 export { createApplication, createClientMutators } from './application';
 export type { MiddlewareContext, MiddlewareFn } from './middleware';
 export {
+    createEvent,
+    createEventHandler,
+    EventBusToken,
+} from './events';
+export type {
+    EventDefinition,
+    ExtractEventPayload,
+    DomainEvent,
+    EventHandlerInstance,
+    EventHandlerClass,
+    EventBus,
+} from './events';
+export {
     CqrsError,
     HandlerNotFoundError,
     ValidationError,

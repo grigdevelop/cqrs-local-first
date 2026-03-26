@@ -11,7 +11,7 @@ type JwtPayload = {
     exp: number;
 };
 
-export type AuthUser = Pick<UserTable, 'id' | 'email'>;
+export type AuthUser = Pick<UserTable, 'id' | 'email' | 'created_at'>;
 
 function base64UrlEncode(input: string | Buffer) {
     return Buffer.from(input).toString('base64url');
@@ -106,7 +106,7 @@ export async function getAuthenticatedUser(db: AppDatabaseLike, request: Request
 
     const user = await db
         .selectFrom('users')
-        .select(['id', 'email'])
+        .select(['id', 'email', 'created_at'])
         .where('id', '=', payload.sub)
         .where('email', '=', payload.email)
         .executeTakeFirst();

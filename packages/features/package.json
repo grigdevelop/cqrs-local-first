@@ -1,10 +1,12 @@
 {
   "name": "features",
   "version": "1.0.0",
-  "description": "Domain feature modules (todos, …). Each feature owns its schema, operations, handlers, entity descriptor, and UI component.",
+  "description": "Application feature modules. Each module owns its model, application wiring, and UI surface.",
   "main": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./profile": "./src/modules/profile/index.ts",
+    "./modules/profile": "./src/modules/profile/index.ts",
     "./todos": "./src/modules/todos/index.ts",
     "./modules/todos": "./src/modules/todos/index.ts"
   },

@@ -4,6 +4,7 @@ import type { WriteTransaction } from "replicache";
 import { HandlerInstance, HandlerClass, OperationDefinition } from "./operation";
 import { HandlerNotFoundError, ValidationError } from "./errors";
 import { type MiddlewareFn, runPipeline } from "./middleware";
+import { type EventHandlerClass, type EventHandlerInstance, type EventBus, EventBusToken } from "./events";
 
 function parseOrThrow<T>(
     schema: { parse(v: unknown): T },
@@ -33,41 +34,65 @@ export function createApplication<
 >(options: {
     services?: (container: Container) => void;
     middleware?: MiddlewareFn[];
+    events?: EventHandlerClass[];
     queries?: TQueryClasses;
     mutations?: TMutationClasses;
 }) {
     const middleware = options.middleware ?? [];
     const container = new Container();
 
-    if (options.services) {
-        options.services(container);
+    // ── Step 1: user-supplied services ──────────────────────────────────────
+    options.services?.(container);
+
+    // ── Step 2: event handlers ───────────────────────────────────────────────
+    // Must happen before query/mutation handlers so EventBusToken is bound and
+    // available when those handlers are resolved from the container.
+    const eventHandlerMap = new Map<string, EventHandlerInstance[]>();
+    for (const HandlerCls of (options.events ?? []) as EventHandlerClass[]) {
+        container.bind(HandlerCls).toSelf();
+        const instance = container.get(HandlerCls);
+        const bucket = eventHandlerMap.get(instance.definition.type) ?? [];
+        bucket.push(instance);
+        eventHandlerMap.set(instance.definition.type, bucket);
     }
 
+    // ── Step 3: event bus ────────────────────────────────────────────────────
+    const eventBus: EventBus = {
+        async publish(event) {
+            const handlers = eventHandlerMap.get(event.type) ?? [];
+            for (const h of handlers) {
+                await h.handle(event.payload);
+            }
+        },
+    };
+    container.bind(EventBusToken).toConstantValue(eventBus);
+
+    // ── Step 4: query / mutation handlers ────────────────────────────────────
+    const queryHandlers = new Map<string, HandlerInstance>();
+    const mutationHandlers = new Map<string, HandlerInstance>();
+
+    for (const HandlerCls of (options.queries ?? []) as HandlerClass[]) {
+        container.bind(HandlerCls).toSelf();
+        const instance = container.get(HandlerCls);
+        queryHandlers.set(instance.definition.type, instance);
+    }
+    for (const HandlerCls of (options.mutations ?? []) as HandlerClass[]) {
+        container.bind(HandlerCls).toSelf();
+        const instance = container.get(HandlerCls);
+        mutationHandlers.set(instance.definition.type, instance);
+    }
+
+    // ── Typed application facade ─────────────────────────────────────────────
     class Application {
+        // Phantom fields used only for type inference in createClientMutators.
         declare readonly __queryDefs: DefinitionsOf<TQueryClasses>;
         declare readonly __mutationDefs: DefinitionsOf<TMutationClasses>;
-
-        queryHandlers = new Map<string, HandlerInstance>();
-        mutationHandlers = new Map<string, HandlerInstance>();
-
-        constructor() {
-            for (const HandlerCls of (options.queries ?? []) as HandlerClass[]) {
-                container.bind(HandlerCls).toSelf();
-                const instance = container.get(HandlerCls);
-                this.queryHandlers.set(instance.definition.type, instance);
-            }
-            for (const HandlerCls of (options.mutations ?? []) as HandlerClass[]) {
-                container.bind(HandlerCls).toSelf();
-                const instance = container.get(HandlerCls);
-                this.mutationHandlers.set(instance.definition.type, instance);
-            }
-        }
 
         executeQuery<TType extends DefinitionsOf<TQueryClasses>['type']>(
             type: TType,
             input: InputFor<DefinitionsOf<TQueryClasses>, TType>
         ): Promise<OutputFor<DefinitionsOf<TQueryClasses>, TType>> {
-            const handler = this.queryHandlers.get(type);
+            const handler = queryHandlers.get(type);
             if (!handler) throw new HandlerNotFoundError('query', type);
             const validatedInput = parseOrThrow(handler.definition.input, input, 'input', type);
             return runPipeline(
@@ -81,7 +106,7 @@ export function createApplication<
             type: TType,
             input: InputFor<DefinitionsOf<TMutationClasses>, TType>
         ): Promise<OutputFor<DefinitionsOf<TMutationClasses>, TType>> {
-            const handler = this.mutationHandlers.get(type);
+            const handler = mutationHandlers.get(type);
             if (!handler) throw new HandlerNotFoundError('mutation', type);
             const validatedInput = parseOrThrow(handler.definition.input, input, 'input', type);
             return runPipeline(

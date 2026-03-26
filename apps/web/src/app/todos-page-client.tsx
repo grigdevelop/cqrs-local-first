@@ -2,6 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { TodoModuleRoutes } from 'features/todos';
+import { ProfileModuleView } from 'features/profile';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { CredentialsSchema, type Credentials } from '@/auth/credentials';
@@ -9,9 +10,11 @@ import { CredentialsSchema, type Credentials } from '@/auth/credentials';
 type SessionUser = {
     id: string;
     email: string;
+    created_at: string;
 };
 
 type AuthMode = 'login' | 'register';
+type AppModule = 'todos' | 'profile';
 
 async function readJson<T>(response: Response): Promise<T> {
     return response.json() as Promise<T>;
@@ -20,6 +23,7 @@ async function readJson<T>(response: Response): Promise<T> {
 export default function TodosPageClient() {
     const [user, setUser] = useState<SessionUser | null>(null);
     const [mode, setMode] = useState<AuthMode>('register');
+    const [activeModule, setActiveModule] = useState<AppModule>('todos');
     const [loading, setLoading] = useState(true);
     const [loggingOut, setLoggingOut] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -68,6 +72,7 @@ export default function TodosPageClient() {
         }
 
         setUser(payload.user);
+        setActiveModule('todos');
         reset();
     }
 
@@ -227,12 +232,29 @@ export default function TodosPageClient() {
                     </button>
                 </div>
             </header>
+            <nav className="tabs tabs-box mb-6 w-fit bg-base-100 p-1 shadow-md" aria-label="Application modules">
+                <button
+                    type="button"
+                    onClick={() => setActiveModule('todos')}
+                    className={`tab rounded-lg px-5 ${activeModule === 'todos' ? 'tab-active bg-primary text-primary-content' : ''}`}
+                >
+                    Todos
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setActiveModule('profile')}
+                    className={`tab rounded-lg px-5 ${activeModule === 'profile' ? 'tab-active bg-primary text-primary-content' : ''}`}
+                >
+                    Profile
+                </button>
+            </nav>
             {error ? (
                 <div className="alert alert-error alert-soft mb-4 text-sm">
                     <span>{error}</span>
                 </div>
             ) : null}
-            <TodoModuleRoutes />
+            {activeModule === 'todos' ? <TodoModuleRoutes /> : <ProfileModuleView profile={user} />}
         </main>
     );
 }
+

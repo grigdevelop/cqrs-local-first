@@ -41,12 +41,12 @@ export async function buildPullResponse(
 
     // Only include clients confirmed after fromVersion to avoid the
     // "cookie did not change, but lastMutationIDChanges is not empty" warning.
-    const clients: ReplicacheClientRow[] = await db
+    const clients = await db
         .selectFrom('replicache_clients')
         .selectAll()
         .where('client_group_id', '=', pull.clientGroupID)
         .$if(fromVersion > 0, qb => qb.where('confirmed_at_version', '>', fromVersion))
-        .execute();
+        .execute() as ReplicacheClientRow[];
 
     let patch: PatchOperation[];
 

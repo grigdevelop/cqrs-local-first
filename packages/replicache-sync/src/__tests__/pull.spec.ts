@@ -7,7 +7,7 @@ const CLIENT_GROUP = 'group-1';
 const CLIENT_ID = 'client-1';
 
 function makePull(cookie: number | null): PullRequestV1 {
-    return { profileID: 'p1', clientGroupID: CLIENT_GROUP, cookie, pullVersion: 1 };
+    return { profileID: 'p1', clientGroupID: CLIENT_GROUP, cookie, pullVersion: 1, schemaVersion: '' };
 }
 
 describe('buildPullResponse', () => {
