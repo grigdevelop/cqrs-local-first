@@ -1,5 +1,5 @@
-import { TodoRouter } from 'features/todos';
+import TodosPageClient from './todos-page-client';
 
 export default function Page() {
-    return <TodoRouter />;
+    return <TodosPageClient />;
 }
