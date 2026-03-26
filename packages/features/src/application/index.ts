@@ -3,4 +3,8 @@ export type { ApplicationReplicache, FeaturesApp } from './create-features-app';
 export { applicationMutationEntityMap, applicationMutators } from './create-features-app';
 export { ApplicationReplicacheProvider, useApplicationReplicache } from './replicache-provider';
 export { ApplicationShell } from './application-shell';
+export { ApplicationFrame } from './application-frame';
+export { ApplicationHeader } from './application-header';
+export { ApplicationNavigation, primaryNavigationItems } from './application-navigation';
+export type { NavigationItem } from './application-navigation';
 export { APPLICATION_DB, APPLICATION_USER_ID } from './dependency-tokens';
