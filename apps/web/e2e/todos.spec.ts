@@ -184,7 +184,7 @@ test('second pull does not trigger "cookie did not change" warning', async ({ pa
 });
 
 test('can create and publish an article', async ({ page }) => {
-    await page.getByRole('button', { name: 'Articles' }).click();
+    await page.getByRole('link', { name: 'Articles' }).click();
     await page.getByPlaceholder('Article title').fill('Launch Notes');
     await page.getByPlaceholder('Write something worth syncing').fill('This workspace now supports articles.');
     await page.getByRole('button', { name: 'Create article' }).click();

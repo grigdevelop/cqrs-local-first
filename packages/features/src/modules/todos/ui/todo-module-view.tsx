@@ -1,26 +1,9 @@
 'use client';
 
-import { createClientMutators } from 'cqrs';
-import { useEffect, useRef, useState } from 'react';
-import { Replicache } from 'replicache';
+import { useRef } from 'react';
 import { useSubscribe } from 'replicache-react';
-import type { TodoModuleApplication } from '../application/module';
+import { useFeaturesReplicache } from '../../../replicache-context';
 import type { Todo } from '../model/schema';
-
-const mutators = createClientMutators<TodoModuleApplication>({
-    createTodo: async (tx, args) => {
-        await tx.set(`todo/${args.id}`, { id: args.id, text: args.text, done: false });
-    },
-    toggleTodo: async (tx, args) => {
-        const todo = (await tx.get(`todo/${args.id}`)) as Todo | undefined;
-        if (todo) await tx.set(`todo/${args.id}`, { ...todo, done: !todo.done });
-    },
-    deleteTodo: async (tx, args) => {
-        await tx.del(`todo/${args.id}`);
-    },
-});
-
-type Rep = Replicache<typeof mutators>;
 
 export type TodoFilter = 'all' | 'active' | 'completed';
 
@@ -35,22 +18,8 @@ function matchesFilter(todo: Todo, filter: TodoFilter) {
 }
 
 export function TodoModuleView({ filter = 'all' }: TodoModuleViewProps) {
-    const [rep, setRep] = useState<Rep | null>(null);
+    const rep = useFeaturesReplicache();
     const inputRef = useRef<HTMLInputElement>(null);
-
-    useEffect(() => {
-        const r = new Replicache({
-            name: 'todos',
-            licenseKey: 'l123456789',
-            pushURL: '/api/replicache/push',
-            pullURL: '/api/replicache/pull',
-            mutators,
-        });
-        setRep(r);
-        return () => {
-            r.close();
-        };
-    }, []);
 
     const todos = useSubscribe(
         rep,
@@ -75,9 +44,9 @@ export function TodoModuleView({ filter = 'all' }: TodoModuleViewProps) {
             <form onSubmit={handleSubmit} className="mb-6 flex flex-col gap-3 md:flex-row">
                 <label className="input input-bordered input-lg flex w-full items-center gap-3 md:flex-1">
                     <span className="text-base-content/40">+</span>
-                    <input ref={inputRef} placeholder="What needs to be done?" autoComplete="off" className="grow" />
+                    <input ref={inputRef} placeholder="What needs to be done?" autoComplete="off" className="grow" disabled={!rep} />
                 </label>
-                <button type="submit" className="btn btn-primary btn-lg md:w-auto">
+                <button type="submit" className="btn btn-primary btn-lg md:w-auto" disabled={!rep}>
                     Add
                 </button>
             </form>

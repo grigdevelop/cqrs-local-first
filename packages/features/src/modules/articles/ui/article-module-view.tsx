@@ -1,45 +1,14 @@
 'use client';
 
-import { createClientMutators } from 'cqrs';
-import { useEffect, useState } from 'react';
-import { Replicache } from 'replicache';
+import { useState } from 'react';
 import { useSubscribe } from 'replicache-react';
-import type { ArticleModuleApplication } from '../application/module';
+import { useFeaturesReplicache } from '../../../replicache-context';
 import type { Article } from '../model/schema';
 
-const mutators = createClientMutators<ArticleModuleApplication>({
-    createArticle: async (tx, args) => {
-        await tx.set(`article/${args.id}`, { id: args.id, title: args.title, body: args.body, published: false });
-    },
-    toggleArticlePublished: async (tx, args) => {
-        const article = (await tx.get(`article/${args.id}`)) as Article | undefined;
-        if (article) await tx.set(`article/${args.id}`, { ...article, published: !article.published });
-    },
-    deleteArticle: async (tx, args) => {
-        await tx.del(`article/${args.id}`);
-    },
-});
-
-type Rep = Replicache<typeof mutators>;
-
 export function ArticleModuleView() {
-    const [rep, setRep] = useState<Rep | null>(null);
+    const rep = useFeaturesReplicache();
     const [title, setTitle] = useState('');
     const [body, setBody] = useState('');
-
-    useEffect(() => {
-        const r = new Replicache({
-            name: 'articles',
-            licenseKey: 'l123456789',
-            pushURL: '/api/replicache/push',
-            pullURL: '/api/replicache/pull',
-            mutators,
-        });
-        setRep(r);
-        return () => {
-            void r.close();
-        };
-    }, []);
 
     const articles = useSubscribe(
         rep,
@@ -95,6 +64,7 @@ export function ArticleModuleView() {
                                 onChange={(event) => setTitle(event.target.value)}
                                 placeholder="Article title"
                                 className="input input-bordered w-full"
+                                disabled={!rep}
                             />
                         </label>
                         <label className="form-control w-full">
@@ -104,9 +74,10 @@ export function ArticleModuleView() {
                                 onChange={(event) => setBody(event.target.value)}
                                 placeholder="Write something worth syncing"
                                 className="textarea textarea-bordered min-h-40 w-full"
+                                disabled={!rep}
                             />
                         </label>
-                        <button type="submit" className="btn btn-primary">Create article</button>
+                        <button type="submit" className="btn btn-primary" disabled={!rep}>Create article</button>
                     </div>
                 </form>
 

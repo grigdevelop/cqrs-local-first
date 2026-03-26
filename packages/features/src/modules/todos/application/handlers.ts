@@ -1,6 +1,7 @@
 import { injectable, inject } from 'inversify';
 import type { Kysely } from 'kysely';
 import { createMutationHandler, createQueryHandler } from 'cqrs';
+import { FEATURES_DB, FEATURES_USER_ID } from '../../../dependencies';
 import { rowToTodo, type TodoRow } from '../model/schema';
 import {
     createTodoOperation,
@@ -17,14 +18,11 @@ import {
     type ToggleTodoOutput,
 } from '../model/operations';
 
-export const DB = Symbol('TODOS_DB');
-export const USER_ID = Symbol('TODOS_USER_ID');
-
 @injectable()
 export class GetTodosHandler extends createQueryHandler(getTodosOperation) {
     constructor(
-        @inject(DB) private db: Kysely<any>,
-        @inject(USER_ID) private userId: string,
+        @inject(FEATURES_DB) private db: Kysely<any>,
+        @inject(FEATURES_USER_ID) private userId: string,
     ) { super(); }
 
     async execute(_input: GetTodosInput): Promise<GetTodosOutput> {
@@ -41,8 +39,8 @@ export class GetTodosHandler extends createQueryHandler(getTodosOperation) {
 @injectable()
 export class CreateTodoHandler extends createMutationHandler(createTodoOperation) {
     constructor(
-        @inject(DB) private db: Kysely<any>,
-        @inject(USER_ID) private userId: string,
+        @inject(FEATURES_DB) private db: Kysely<any>,
+        @inject(FEATURES_USER_ID) private userId: string,
     ) { super(); }
 
     async execute(input: CreateTodoInput): Promise<CreateTodoOutput> {
@@ -58,8 +56,8 @@ export class CreateTodoHandler extends createMutationHandler(createTodoOperation
 @injectable()
 export class ToggleTodoHandler extends createMutationHandler(toggleTodoOperation) {
     constructor(
-        @inject(DB) private db: Kysely<any>,
-        @inject(USER_ID) private userId: string,
+        @inject(FEATURES_DB) private db: Kysely<any>,
+        @inject(FEATURES_USER_ID) private userId: string,
     ) { super(); }
 
     async execute(input: ToggleTodoInput): Promise<ToggleTodoOutput> {
@@ -83,8 +81,8 @@ export class ToggleTodoHandler extends createMutationHandler(toggleTodoOperation
 @injectable()
 export class DeleteTodoHandler extends createMutationHandler(deleteTodoOperation) {
     constructor(
-        @inject(DB) private db: Kysely<any>,
-        @inject(USER_ID) private userId: string,
+        @inject(FEATURES_DB) private db: Kysely<any>,
+        @inject(FEATURES_USER_ID) private userId: string,
     ) { super(); }
 
     async execute(input: DeleteTodoInput): Promise<DeleteTodoOutput> {

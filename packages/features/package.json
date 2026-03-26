@@ -5,6 +5,8 @@
   "main": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./auth": "./src/modules/auth/index.ts",
+    "./modules/auth": "./src/modules/auth/index.ts",
     "./articles": "./src/modules/articles/index.ts",
     "./modules/articles": "./src/modules/articles/index.ts",
     "./profile": "./src/modules/profile/index.ts",
@@ -19,10 +21,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
     "cqrs": "*",
     "inversify": "^8.1.0",
     "kysely": "^0.28.14",
     "react": "^19.0.0",
+    "react-hook-form": "^7.65.0",
     "react-router-dom": "^7.13.2",
     "replicache": "^15.3.0",
     "replicache-react": "^6.0.0",

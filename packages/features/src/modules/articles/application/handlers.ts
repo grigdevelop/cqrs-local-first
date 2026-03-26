@@ -1,6 +1,7 @@
 import { injectable, inject } from 'inversify';
 import type { Kysely } from 'kysely';
 import { createMutationHandler, createQueryHandler } from 'cqrs';
+import { FEATURES_DB, FEATURES_USER_ID } from '../../../dependencies';
 import { rowToArticle, type ArticleRow } from '../model/schema';
 import {
     createArticleOperation,
@@ -17,12 +18,9 @@ import {
     type ToggleArticlePublishedOutput,
 } from '../model/operations';
 
-export const DB = Symbol('ARTICLES_DB');
-export const USER_ID = Symbol('ARTICLES_USER_ID');
-
 @injectable()
 export class GetArticlesHandler extends createQueryHandler(getArticlesOperation) {
-    constructor(@inject(DB) private db: Kysely<any>, @inject(USER_ID) private userId: string) { super(); }
+    constructor(@inject(FEATURES_DB) private db: Kysely<any>, @inject(FEATURES_USER_ID) private userId: string) { super(); }
 
     async execute(_input: GetArticlesInput): Promise<GetArticlesOutput> {
         const rows = await this.db
@@ -37,7 +35,7 @@ export class GetArticlesHandler extends createQueryHandler(getArticlesOperation)
 
 @injectable()
 export class CreateArticleHandler extends createMutationHandler(createArticleOperation) {
-    constructor(@inject(DB) private db: Kysely<any>, @inject(USER_ID) private userId: string) { super(); }
+    constructor(@inject(FEATURES_DB) private db: Kysely<any>, @inject(FEATURES_USER_ID) private userId: string) { super(); }
 
     async execute(input: CreateArticleInput): Promise<CreateArticleOutput> {
         const { id, title, body } = input.input;
@@ -51,7 +49,7 @@ export class CreateArticleHandler extends createMutationHandler(createArticleOpe
 
 @injectable()
 export class ToggleArticlePublishedHandler extends createMutationHandler(toggleArticlePublishedOperation) {
-    constructor(@inject(DB) private db: Kysely<any>, @inject(USER_ID) private userId: string) { super(); }
+    constructor(@inject(FEATURES_DB) private db: Kysely<any>, @inject(FEATURES_USER_ID) private userId: string) { super(); }
 
     async execute(input: ToggleArticlePublishedInput): Promise<ToggleArticlePublishedOutput> {
         const row = await this.db
@@ -73,7 +71,7 @@ export class ToggleArticlePublishedHandler extends createMutationHandler(toggleA
 
 @injectable()
 export class DeleteArticleHandler extends createMutationHandler(deleteArticleOperation) {
-    constructor(@inject(DB) private db: Kysely<any>, @inject(USER_ID) private userId: string) { super(); }
+    constructor(@inject(FEATURES_DB) private db: Kysely<any>, @inject(FEATURES_USER_ID) private userId: string) { super(); }
 
     async execute(input: DeleteArticleInput): Promise<DeleteArticleOutput> {
         await this.db

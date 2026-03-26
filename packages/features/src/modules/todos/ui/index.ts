@@ -1,3 +1,3 @@
 export type { TodoFilter } from './todo-module-view';
-export { TodoModuleRoutes } from './todo-module-routes';
+export { TodoModuleShell } from './todo-module-shell';
 export { TodoModuleView } from './todo-module-view';

@@ -64,3 +64,34 @@ function zodSchemaToKyselyTable<T extends z.ZodObject<any>>(
 ): ZodSchemaToKyselyTable<T> {
   return {} as ZodSchemaToKyselyTable<T>;
 }
+
+
+---
+
+refactor features project.
+src/application.ts as the entry point for all features.
+src/shell.tsx as the shell for all features. (contains routes configuration)
+React context and provider for providing Replicache instance to all features.
+
+
+---
+
+┌──────────┬──────────────────────────────────────────┐
+  │ Priority │                   Item                   │
+  ├──────────┼──────────────────────────────────────────┤
+  │ High     │ Export entities.ts from index.ts         │
+  ├──────────┼──────────────────────────────────────────┤
+  │ High     │ Output validation (or document the skip) │
+  ├──────────┼──────────────────────────────────────────┤
+  │ High     │ Delete / move source.ts                  │
+  ├──────────┼──────────────────────────────────────────┤
+  │ Medium   │ Structured error types                   │
+  ├──────────┼──────────────────────────────────────────┤
+  │ Medium   │ Pipeline / middleware behaviors          │
+  ├──────────┼──────────────────────────────────────────┤
+  │ Low      │ Domain events / event bus                │
+  ├──────────┼──────────────────────────────────────────┤
+  │ Low      │ Request-scoped DI                        │
+  ├──────────┼──────────────────────────────────────────┤
+  │ Low      │ Query/mutation kind enforcement          │
+  └──────────┴──────────────────────────────────────────┘
