@@ -1,6 +1,6 @@
 'use client';
 
-import { AuthShell, FeaturesShell, type Credentials } from 'features';
+import { AuthShell, ApplicationShell, type Credentials } from 'features';
 import { useEffect, useState } from 'react';
 
 type SessionUser = {
@@ -99,7 +99,7 @@ export default function TodosPageClient() {
                     </div>
                 </main>
             ) : null}
-            <FeaturesShell
+            <ApplicationShell
                 user={user}
                 actions={
                     <>

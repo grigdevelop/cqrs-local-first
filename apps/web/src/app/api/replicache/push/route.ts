@@ -1,6 +1,6 @@
 import type { PushRequestV1 } from 'replicache';
 import { processPush } from 'replicache-sync';
-import { featuresMutationEntityTable } from 'features';
+import { applicationMutationEntityMap } from 'features';
 import { createUserFeaturesApp } from '@/features/app';
 import { db, commitMutation } from '@/db/database';
 import { getAuthenticatedUser } from '@/auth/jwt';
@@ -16,7 +16,7 @@ export async function POST(req: Request) {
 
     await processPush(db, push, {
         executeMutation: (name, args) => (app.executeMutation as (n: string, a: unknown) => Promise<unknown>)(name, args),
-        getMutationEntityTable: (name) => featuresMutationEntityTable.get(name),
+        getMutationEntityTable: (name) => applicationMutationEntityMap.get(name),
         commit: commitMutation,
     });
 

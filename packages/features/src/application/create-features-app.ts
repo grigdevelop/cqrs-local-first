@@ -1,29 +1,29 @@
 import { createApplication, createClientMutators } from 'cqrs';
 import type { Kysely } from 'kysely';
 import type { Replicache } from 'replicache';
-import { FEATURES_DB, FEATURES_USER_ID } from './dependencies';
-import type { Article } from './modules/articles';
-import { mutationEntityTable as articleMutationEntityTable } from './modules/articles';
+import { APPLICATION_DB, APPLICATION_USER_ID } from './dependency-tokens';
+import type { Article } from '../modules/articles';
+import { mutationEntityTable as articleMutationEntityTable } from '../modules/articles';
 import {
     CreateArticleHandler,
     DeleteArticleHandler,
     GetArticlesHandler,
     ToggleArticlePublishedHandler,
-} from './modules/articles/application/handlers';
-import type { Todo } from './modules/todos';
-import { mutationEntityTable as todoMutationEntityTable } from './modules/todos';
+} from '../modules/articles/application/handlers';
+import type { Todo } from '../modules/todos';
+import { mutationEntityTable as todoMutationEntityTable } from '../modules/todos';
 import {
     CreateTodoHandler,
     DeleteTodoHandler,
     GetTodosHandler,
     ToggleTodoHandler,
-} from './modules/todos/application/handlers';
+} from '../modules/todos/application/handlers';
 
-export function createFeaturesApplication(db: Kysely<any>, userId: string) {
+export function createFeaturesApp(db: Kysely<any>, userId: string) {
     return createApplication({
         services: (container) => {
-            container.bind(FEATURES_DB).toConstantValue(db);
-            container.bind(FEATURES_USER_ID).toConstantValue(userId);
+            container.bind(APPLICATION_DB).toConstantValue(db);
+            container.bind(APPLICATION_USER_ID).toConstantValue(userId);
         },
         queries: [GetTodosHandler, GetArticlesHandler],
         mutations: [
@@ -37,14 +37,14 @@ export function createFeaturesApplication(db: Kysely<any>, userId: string) {
     });
 }
 
-export type FeaturesApplication = ReturnType<typeof createFeaturesApplication>;
+export type FeaturesApp = ReturnType<typeof createFeaturesApp>;
 
-export const featuresMutationEntityTable = new Map<string, string | null>([
+export const applicationMutationEntityMap = new Map<string, string | null>([
     ...todoMutationEntityTable,
     ...articleMutationEntityTable,
 ]);
 
-export const featuresMutators = createClientMutators<FeaturesApplication>({
+export const applicationMutators = createClientMutators<FeaturesApp>({
     createTodo: async (tx, args) => {
         await tx.set(`todo/${args.id}`, { id: args.id, text: args.text, done: false });
     },
@@ -67,4 +67,4 @@ export const featuresMutators = createClientMutators<FeaturesApplication>({
     },
 });
 
-export type FeaturesReplicache = Replicache<typeof featuresMutators>;
+export type ApplicationReplicache = Replicache<typeof applicationMutators>;

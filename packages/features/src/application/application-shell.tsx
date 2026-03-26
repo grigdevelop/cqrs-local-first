@@ -2,30 +2,30 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { HashRouter, MemoryRouter, NavLink, Navigate, Outlet, Route, Routes } from 'react-router-dom';
-import { ProfileModuleShell, type UserProfile } from './modules/profile';
-import { ArticleModuleShell } from './modules/articles';
-import { TodoModuleShell } from './modules/todos';
-import { FeaturesReplicacheProvider } from './replicache-context';
+import { ArticleModuleShell } from '../modules/articles';
+import { ProfileModuleShell, type UserProfile } from '../modules/profile';
+import { TodoModuleShell } from '../modules/todos';
+import { ApplicationReplicacheProvider } from './replicache-provider';
 
-type FeaturesShellProps = {
+type ApplicationShellProps = {
     user: UserProfile;
     actions?: ReactNode;
 };
 
-const primaryModules = [
+const primaryNavigationItems = [
     { id: 'todos', href: '/todos', label: 'Todos' },
     { id: 'articles', href: '/articles', label: 'Articles' },
     { id: 'profile', href: '/profile', label: 'Profile' },
 ] as const;
 
-type ShellLayoutContentProps = {
+type ApplicationFrameProps = {
     user: UserProfile;
     actions?: ReactNode;
     useRouterLinks?: boolean;
     children?: ReactNode;
 };
 
-function ShellLayoutContent({ user, actions, useRouterLinks = true, children }: ShellLayoutContentProps) {
+function ApplicationFrame({ user, actions, useRouterLinks = true, children }: ApplicationFrameProps) {
     return (
         <main className="mx-auto min-h-screen w-full max-w-6xl px-4 py-8">
             <header className="navbar mb-6 rounded-box border border-base-300 bg-base-100/90 px-4 shadow-lg backdrop-blur">
@@ -45,7 +45,7 @@ function ShellLayoutContent({ user, actions, useRouterLinks = true, children }: 
             </header>
 
             <nav className="tabs tabs-box mb-6 w-fit bg-base-100 p-1 shadow-md" aria-label="Application modules">
-                {primaryModules.map((module) => (
+                {primaryNavigationItems.map((module) => (
                     useRouterLinks ? (
                         <NavLink
                             key={module.id}
@@ -70,15 +70,15 @@ function ShellLayoutContent({ user, actions, useRouterLinks = true, children }: 
     );
 }
 
-function ShellLayout({ user, actions }: { user: UserProfile; actions?: ReactNode }) {
+function RoutedApplicationFrame({ user, actions }: { user: UserProfile; actions?: ReactNode }) {
     return (
-        <ShellLayoutContent user={user} actions={actions}>
+        <ApplicationFrame user={user} actions={actions}>
             <Outlet />
-        </ShellLayoutContent>
+        </ApplicationFrame>
     );
 }
 
-export function FeaturesShell({ user, actions }: FeaturesShellProps) {
+export function ApplicationShell({ user, actions }: ApplicationShellProps) {
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
@@ -86,17 +86,17 @@ export function FeaturesShell({ user, actions }: FeaturesShellProps) {
     }, []);
 
     return (
-        <FeaturesReplicacheProvider>
+        <ApplicationReplicacheProvider>
             {!mounted ? (
-                <ShellLayoutContent user={user} actions={actions} useRouterLinks={false}>
+                <ApplicationFrame user={user} actions={actions} useRouterLinks={false}>
                     <MemoryRouter initialEntries={['/']}>
                         <TodoModuleShell />
                     </MemoryRouter>
-                </ShellLayoutContent>
+                </ApplicationFrame>
             ) : (
                 <HashRouter>
                     <Routes>
-                        <Route element={<ShellLayout user={user} actions={actions} />}>
+                        <Route element={<RoutedApplicationFrame user={user} actions={actions} />}>
                             <Route index element={<Navigate to="/todos" replace />} />
                             <Route path="/todos/*" element={<TodoModuleShell />} />
                             <Route path="/articles/*" element={<ArticleModuleShell />} />
@@ -106,6 +106,6 @@ export function FeaturesShell({ user, actions }: FeaturesShellProps) {
                     </Routes>
                 </HashRouter>
             )}
-        </FeaturesReplicacheProvider>
+        </ApplicationReplicacheProvider>
     );
 }

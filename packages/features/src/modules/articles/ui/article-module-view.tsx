@@ -2,11 +2,11 @@
 
 import { useState } from 'react';
 import { useSubscribe } from 'replicache-react';
-import { useFeaturesReplicache } from '../../../replicache-context';
+import { useApplicationReplicache } from '../../../application/replicache-provider';
 import type { Article } from '../model/schema';
 
 export function ArticleModuleView() {
-    const rep = useFeaturesReplicache();
+    const rep = useApplicationReplicache();
     const [title, setTitle] = useState('');
     const [body, setBody] = useState('');
 

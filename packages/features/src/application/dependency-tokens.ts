@@ -1,0 +1,2 @@
+export const APPLICATION_DB = Symbol('APPLICATION_DB');
+export const APPLICATION_USER_ID = Symbol('APPLICATION_USER_ID');

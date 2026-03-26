@@ -2,7 +2,7 @@
 
 import { useRef } from 'react';
 import { useSubscribe } from 'replicache-react';
-import { useFeaturesReplicache } from '../../../replicache-context';
+import { useApplicationReplicache } from '../../../application/replicache-provider';
 import type { Todo } from '../model/schema';
 
 export type TodoFilter = 'all' | 'active' | 'completed';
@@ -18,7 +18,7 @@ function matchesFilter(todo: Todo, filter: TodoFilter) {
 }
 
 export function TodoModuleView({ filter = 'all' }: TodoModuleViewProps) {
-    const rep = useFeaturesReplicache();
+    const rep = useApplicationReplicache();
     const inputRef = useRef<HTMLInputElement>(null);
 
     const todos = useSubscribe(

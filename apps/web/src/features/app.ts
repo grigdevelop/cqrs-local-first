@@ -1,8 +1,8 @@
-import { createFeaturesApplication } from 'features';
+import { createFeaturesApp } from 'features';
 import { db } from '@/db/database';
 
 export function createUserFeaturesApp(userId: string) {
-    return createFeaturesApplication(db, userId);
+    return createFeaturesApp(db, userId);
 }
 
-export type { FeaturesApplication as Application } from 'features';
+export type { FeaturesApp as Application } from 'features';

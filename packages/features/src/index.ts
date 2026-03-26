@@ -1,6 +1,4 @@
 export * from './application';
-export * from './replicache-context';
-export { FeaturesShell } from './shell';
 export { AuthShell, LoginRoute, RegisterRoute } from './modules/auth';
 export type { AuthMode, Credentials } from './modules/auth';
 export { ArticleModuleShell, ArticleModuleView } from './modules/articles';
