@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import {
-    createQuery,
     createMutation,
+    createQuery,
     ExtractMutationInput,
     ExtractMutationOutput,
     ExtractQueryInput,
@@ -50,15 +50,6 @@ export const deleteTodoOperation = createMutation(
 export type DeleteTodoInput = ExtractMutationInput<typeof deleteTodoOperation>;
 export type DeleteTodoOutput = ExtractMutationOutput<typeof deleteTodoOperation>;
 
-// ---------------------------------------------------------------------------
-// Mutation registry — maps mutation name → the entity table it affects.
-// The push route uses this to stamp the correct table via commitMutation,
-// without any hardcoded entity names in the sync infrastructure.
-//
-// Convention: args.id is the affected row's id for all registered mutations.
-// ---------------------------------------------------------------------------
-
-/** Entity table name that a mutation writes to, or null for read-only / cross-cutting mutations. */
 export const mutationEntityTable = new Map<string, string | null>([
     [createTodoOperation.type, 'todos'],
     [toggleTodoOperation.type, 'todos'],

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { HashRouter, NavLink, Navigate, Outlet, Route, Routes } from 'react-router-dom';
-import { TodoApp, type TodoFilter } from './component';
+import { TodoApp, type TodoFilter } from './todo-app';
 
 const views: Array<{ filter: TodoFilter; href: string; label: string }> = [
     { filter: 'all', href: '/', label: 'All' },

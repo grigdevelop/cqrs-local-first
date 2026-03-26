@@ -1,23 +1,22 @@
 import { injectable, inject } from 'inversify';
 import type { Kysely } from 'kysely';
-import { createQueryHandler, createMutationHandler } from 'cqrs';
-import { rowToTodo, type TodoRow } from './schema';
+import { createMutationHandler, createQueryHandler } from 'cqrs';
+import { rowToTodo, type TodoRow } from '../model/schema';
 import {
-    getTodosOperation,
     createTodoOperation,
-    toggleTodoOperation,
     deleteTodoOperation,
-    type GetTodosInput,
-    type GetTodosOutput,
+    getTodosOperation,
+    toggleTodoOperation,
     type CreateTodoInput,
     type CreateTodoOutput,
-    type ToggleTodoInput,
-    type ToggleTodoOutput,
     type DeleteTodoInput,
     type DeleteTodoOutput,
-} from './operations';
+    type GetTodosInput,
+    type GetTodosOutput,
+    type ToggleTodoInput,
+    type ToggleTodoOutput,
+} from '../model/operations';
 
-/** DI token for the Kysely database instance. Bind it via createTodoApp(). */
 export const DB = Symbol('DB');
 
 @injectable()
@@ -40,8 +39,6 @@ export class CreateTodoHandler extends createMutationHandler(createTodoOperation
 
     async execute(input: CreateTodoInput): Promise<CreateTodoOutput> {
         const { id, text } = input.input;
-        // replicache_version is left at 0; the push route stamps it inside its
-        // atomic transaction after the handler returns.
         await this.db
             .insertInto('todos')
             .values({ id, text, done: 0, deleted: 0, replicache_version: 0 })
@@ -75,8 +72,6 @@ export class DeleteTodoHandler extends createMutationHandler(deleteTodoOperation
     constructor(@inject(DB) private db: Kysely<any>) { super(); }
 
     async execute(input: DeleteTodoInput): Promise<DeleteTodoOutput> {
-        // Soft delete: keep the row so the pull handler can emit a `del` patch op
-        // for clients that haven't synced yet.
         await this.db
             .updateTable('todos')
             .set({ deleted: 1 })

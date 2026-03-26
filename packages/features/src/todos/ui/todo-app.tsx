@@ -4,8 +4,8 @@ import { createClientMutators } from 'cqrs';
 import { useEffect, useRef, useState } from 'react';
 import { Replicache } from 'replicache';
 import { useSubscribe } from 'replicache-react';
-import type { TodoApplication } from './app';
-import type { Todo } from './schema';
+import type { TodoApplication } from '../application/app';
+import type { Todo } from '../model/schema';
 
 const mutators = createClientMutators<TodoApplication>({
     createTodo: async (tx, args) => {
