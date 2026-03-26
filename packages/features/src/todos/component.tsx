@@ -3,11 +3,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { Replicache } from 'replicache';
 import { useSubscribe } from 'replicache-react';
-import type { Todo } from '@/db/schema';
-import type { Application } from '@/todos/app';
 import { createClientMutators } from 'cqrs';
+import type { Todo } from './schema';
+import type { TodoApplication } from './app';
 
-const mutators = createClientMutators<Application>({
+const mutators = createClientMutators<TodoApplication>({
     createTodo: async (tx, args) => {
         await tx.set(`todo/${args.id}`, { id: args.id, text: args.text, done: false });
     },

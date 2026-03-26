@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-    transpilePackages: ["cqrs", "replicache-sync"],
+    transpilePackages: ["cqrs", "features", "replicache-sync"],
     serverExternalPackages: ["better-sqlite3"],
 };
 

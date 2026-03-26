@@ -1,7 +1,7 @@
 import type { PushRequestV1 } from 'replicache';
 import { processPush } from 'replicache-sync';
+import { mutationEntityTable } from 'features/todos';
 import { app } from '@/todos/app';
-import { mutationEntityTable } from '@/todos/operations';
 import { db, commitMutation } from '@/db/database';
 
 export async function POST(req: Request) {

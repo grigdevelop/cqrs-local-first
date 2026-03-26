@@ -1,0 +1,26 @@
+{
+  "name": "features",
+  "version": "1.0.0",
+  "description": "Domain feature modules (todos, …). Each feature owns its schema, operations, handlers, entity descriptor, and UI component.",
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./todos": "./src/todos/index.ts"
+  },
+  "scripts": {
+    "compile": "tsc --noEmit"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cqrs": "*",
+    "inversify": "^8.1.0",
+    "kysely": "^0.28.14",
+    "react": "^19.0.0",
+    "replicache": "^15.3.0",
+    "replicache-react": "^6.0.0",
+    "replicache-sync": "*",
+    "zod": "^4.3.6"
+  }
+}

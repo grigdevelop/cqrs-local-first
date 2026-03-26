@@ -1,10 +1,5 @@
-import { createApplication } from 'cqrs';
-import { GetTodosHandler } from './handlers';
-import { CreateTodoHandler, ToggleTodoHandler, DeleteTodoHandler } from './handlers';
+import { createTodoApp } from 'features/todos';
+import { db } from '@/db/database';
 
-export const app = createApplication({
-    queries: [GetTodosHandler],
-    mutations: [CreateTodoHandler, ToggleTodoHandler, DeleteTodoHandler],
-});
-
-export type Application = typeof app;
+export const app = createTodoApp(db);
+export type { TodoApplication as Application } from 'features/todos';

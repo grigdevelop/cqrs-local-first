@@ -1,4 +1,4 @@
-import { TodoApp } from '@/components/todo-app';
+import { TodoApp } from 'features/todos';
 
 export default function Page() {
     return <TodoApp />;

@@ -1,28 +1,15 @@
-import type { Insertable, Selectable } from 'kysely';
+import type { TodoTable } from 'features/todos';
 
-// ---- Database table schemas ----
-
-export interface TodoTable {
-    id: string;
-    text: string;
-    done: number;               // SQLite boolean: 0 | 1
-    deleted: number;            // soft-delete flag: 0 | 1
-    replicache_version: number; // server version when this row was last modified
-}
+export type { TodoTable } from 'features/todos';
 
 export interface ReplicacheClientTable {
     client_id: string;
     client_group_id: string;
     last_mutation_id: number;
     // Server version at which last_mutation_id was last updated.
-    // The pull route uses this to return only newly-confirmed clients in
-    // lastMutationIDChanges, preventing the "cookie unchanged but
-    // lastMutationIDChanges non-empty" Replicache warning.
     confirmed_at_version: number;
 }
 
-// Single-row table holding the global server version counter.
-// Every mutation increments this atomically; pull uses it as the cookie.
 export interface ReplicacheServerVersionTable {
     id: number;   // always 1
     version: number;
@@ -32,23 +19,4 @@ export interface AppDatabase {
     todos: TodoTable;
     replicache_clients: ReplicacheClientTable;
     replicache_server_version: ReplicacheServerVersionTable;
-}
-
-// ---- Kysely row helpers ----
-
-export type TodoRow = Selectable<TodoTable>;
-export type NewTodo = Insertable<TodoTable>;
-
-export type { SyncedEntity } from 'replicache-sync';
-
-// ---- Domain types (boolean done, safe to import on client) ----
-
-export type Todo = {
-    id: string;
-    text: string;
-    done: boolean;
-};
-
-export function rowToTodo(row: TodoRow): Todo {
-    return { id: row.id, text: row.text, done: row.done !== 0 };
 }

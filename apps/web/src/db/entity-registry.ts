@@ -1,17 +1,11 @@
-import type { SyncedEntity } from './schema';
-import { rowToTodo, type TodoRow, type Todo } from './schema';
+import { todoEntity } from 'features/todos';
 
 /**
  * All entity tables that participate in Replicache sync.
  *
  * To add a new entity:
- *   1. Add its table DDL and Kysely interface to schema.ts / database.ts
- *   2. Append an entry here — pull, push, and commitMutation pick it up automatically
+ *   1. Create a feature directory under packages/features/src/
+ *   2. Export a SyncedEntity descriptor from it
+ *   3. Append the entity here — pull, push, and commitMutation pick it up automatically
  */
-export const syncedEntities: SyncedEntity<TodoRow, Todo>[] = [
-    {
-        tableName: 'todos',
-        keyPrefix: 'todo',
-        toValue: rowToTodo,
-    },
-];
+export const syncedEntities = [todoEntity];
