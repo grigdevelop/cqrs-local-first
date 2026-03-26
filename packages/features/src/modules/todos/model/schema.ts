@@ -2,6 +2,7 @@ import type { Insertable, Selectable } from 'kysely';
 
 export interface TodoTable {
     id: string;
+    user_id: string;
     text: string;
     done: number;
     deleted: number;

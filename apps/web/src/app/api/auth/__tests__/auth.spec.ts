@@ -18,6 +18,7 @@ vi.mock('@/db/database', async () => {
         );
         CREATE TABLE todos (
             id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
             text TEXT NOT NULL,
             done INTEGER NOT NULL DEFAULT 0,
             deleted INTEGER NOT NULL DEFAULT 0,
@@ -83,6 +84,7 @@ describe('auth routes', () => {
 
         expect(response.status).toBe(200);
         expect(body.user.email).toBe(credentials.email);
+        expect(body.user.created_at).toBeTruthy();
         expect(response.headers.get('set-cookie')).toContain(`${getAuthCookieName()}=`);
     });
 
@@ -105,6 +107,7 @@ describe('auth routes', () => {
         const body = await response.json();
 
         expect(body.user.email).toBe(credentials.email);
+        expect(body.user.created_at).toBeTruthy();
     });
 
     it('clears the cookie on logout', async () => {

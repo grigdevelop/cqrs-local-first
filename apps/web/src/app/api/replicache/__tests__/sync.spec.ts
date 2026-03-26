@@ -2,19 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type Database from 'better-sqlite3';
 import { getAuthCookieName, signJwt } from '@/auth/jwt';
 
-// ---------------------------------------------------------------------------
-// In-memory database shared across all tests in this file.
-// vi.hoisted runs before vi.mock factories, so dbRef is initialized in time
-// for the factory closure to capture and mutate it.
-// ---------------------------------------------------------------------------
 const dbRef = vi.hoisted((): { sqlite: Database.Database | null } => ({ sqlite: null }));
 
 vi.mock('@/db/database', async () => {
     const { default: SQLite } = await import('better-sqlite3');
     const { Kysely, SqliteDialect } = await import('kysely');
-    // Import the factory directly from the library — not mocked, so this is
-    // the real production logic. Any change to buildSqliteCommit is
-    // automatically reflected in these tests.
     const { buildSqliteCommit } = await import('replicache-sync');
 
     const sqlite = new SQLite(':memory:');
@@ -27,10 +19,20 @@ vi.mock('@/db/database', async () => {
             created_at        TEXT    NOT NULL
         );
         CREATE TABLE todos (
-            id                TEXT    PRIMARY KEY,
-            text              TEXT    NOT NULL,
-            done              INTEGER NOT NULL DEFAULT 0,
-            deleted           INTEGER NOT NULL DEFAULT 0,
+            id                 TEXT    PRIMARY KEY,
+            user_id            TEXT    NOT NULL,
+            text               TEXT    NOT NULL,
+            done               INTEGER NOT NULL DEFAULT 0,
+            deleted            INTEGER NOT NULL DEFAULT 0,
+            replicache_version INTEGER NOT NULL DEFAULT 0
+        );
+        CREATE TABLE articles (
+            id                 TEXT    PRIMARY KEY,
+            user_id            TEXT    NOT NULL,
+            title              TEXT    NOT NULL,
+            body               TEXT    NOT NULL,
+            published          INTEGER NOT NULL DEFAULT 0,
+            deleted            INTEGER NOT NULL DEFAULT 0,
             replicache_version INTEGER NOT NULL DEFAULT 0
         );
         CREATE TABLE replicache_clients (
@@ -49,7 +51,7 @@ vi.mock('@/db/database', async () => {
     dbRef.sqlite = sqlite;
 
     const db = new Kysely({ dialect: new SqliteDialect({ database: sqlite }) });
-    const commitMutation = buildSqliteCommit(sqlite, ['todos']);
+    const commitMutation = buildSqliteCommit(sqlite, ['todos', 'articles']);
 
     return { db, commitMutation };
 });
@@ -57,19 +59,21 @@ vi.mock('@/db/database', async () => {
 import { POST as pushPOST } from '@/app/api/replicache/push/route';
 import { POST as pullPOST } from '@/app/api/replicache/pull/route';
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 const CLIENT_GROUP = 'group-1';
 const CLIENT_ID = 'client-1';
+const USER_1 = { id: 'user-1', email: 'user@example.com', created_at: '2026-01-01T00:00:00.000Z' };
+const USER_2 = { id: 'user-2', email: 'other@example.com', created_at: '2026-01-02T00:00:00.000Z' };
 
-function makeRequest(body: unknown): Request {
+function authCookie(user = USER_1) {
+    return `${getAuthCookieName()}=${signJwt(user)}`;
+}
+
+function makeRequest(body: unknown, user = USER_1): Request {
     return new Request('http://localhost', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            Cookie: `${getAuthCookieName()}=${signJwt({ id: 'user-1', email: 'user@example.com' })}`,
+            Cookie: authCookie(user),
         },
         body: JSON.stringify(body),
     });
@@ -92,7 +96,6 @@ function pullBody(cookie: number | null = null) {
     return { profileID: 'profile-1', clientGroupID: CLIENT_GROUP, cookie, pullVersion: 1 };
 }
 
-// Reset all tables to a clean state before each test.
 beforeEach(() => {
     dbRef.sqlite!.exec(`
         DELETE FROM users;
@@ -100,20 +103,18 @@ beforeEach(() => {
         DELETE FROM replicache_clients;
         UPDATE replicache_server_version SET version = 1;
         INSERT INTO users (id, email, password_hash, created_at) VALUES ('user-1', 'user@example.com', 'hash', '2026-01-01T00:00:00.000Z');
+        INSERT INTO users (id, email, password_hash, created_at) VALUES ('user-2', 'other@example.com', 'hash', '2026-01-02T00:00:00.000Z');
     `);
 });
 
-// ---------------------------------------------------------------------------
-// Push tests
-// ---------------------------------------------------------------------------
-
 describe('push', () => {
-    it('creates a todo', async () => {
+    it('creates a todo for the authenticated user', async () => {
         await pushPOST(makeRequest(pushBody([
             { id: 1, name: 'createTodo', args: { id: 'todo-1', text: 'Buy milk' } },
         ])));
 
         const row = dbRef.sqlite!.prepare('SELECT * FROM todos WHERE id = ?').get('todo-1') as any;
+        expect(row.user_id).toBe(USER_1.id);
         expect(row.text).toBe('Buy milk');
         expect(row.done).toBe(0);
         expect(row.deleted).toBe(0);
@@ -130,11 +131,9 @@ describe('push', () => {
     });
 
     it('skips already-processed mutations (idempotency)', async () => {
-        // First time: creates todo-1
         await pushPOST(makeRequest(pushBody([
             { id: 1, name: 'createTodo', args: { id: 'todo-1', text: 'First' } },
         ])));
-        // Retry with same mutation id but different args — must be ignored
         await pushPOST(makeRequest(pushBody([
             { id: 1, name: 'createTodo', args: { id: 'todo-2', text: 'Duplicate' } },
         ])));
@@ -174,6 +173,19 @@ describe('push', () => {
         expect(row.deleted).toBe(1);
     });
 
+    it('does not let another user mutate a todo they do not own', async () => {
+        await pushPOST(makeRequest(pushBody([
+            { id: 1, name: 'createTodo', args: { id: 'todo-1', text: 'Private' } },
+        ]), USER_1));
+
+        await pushPOST(makeRequest(pushBody([
+            { id: 2, name: 'toggleTodo', args: { id: 'todo-1' } },
+        ]), USER_2));
+
+        const row = dbRef.sqlite!.prepare('SELECT done FROM todos WHERE id = ?').get('todo-1') as any;
+        expect(row.done).toBe(0);
+    });
+
     it('still commits version + last_mutation_id when mutation name is unknown', async () => {
         const versionBefore = (dbRef.sqlite!.prepare('SELECT version FROM replicache_server_version').get() as any).version;
 
@@ -189,14 +201,9 @@ describe('push', () => {
     });
 });
 
-// ---------------------------------------------------------------------------
-// Pull tests
-// ---------------------------------------------------------------------------
-
 describe('pull', () => {
     it('returns all todos on first pull (cookie = null)', async () => {
-        // Insert a todo with version 1 (> fromVersion 0)
-        dbRef.sqlite!.prepare('INSERT INTO todos VALUES (?, ?, 0, 0, 1)').run('todo-1', 'Hello');
+        dbRef.sqlite!.prepare('INSERT INTO todos VALUES (?, ?, ?, 0, 0, 1)').run('todo-1', USER_1.id, 'Hello');
 
         const res = await pullPOST(makeRequest(pullBody(null)));
         const body = await res.json();
@@ -208,11 +215,10 @@ describe('pull', () => {
     });
 
     it('returns only rows changed since the last pull (delta sync)', async () => {
-        dbRef.sqlite!.prepare('INSERT INTO todos VALUES (?, ?, 0, 0, 1)').run('todo-old', 'Old');
-        dbRef.sqlite!.prepare('INSERT INTO todos VALUES (?, ?, 0, 0, 2)').run('todo-new', 'New');
+        dbRef.sqlite!.prepare('INSERT INTO todos VALUES (?, ?, ?, 0, 0, 1)').run('todo-old', USER_1.id, 'Old');
+        dbRef.sqlite!.prepare('INSERT INTO todos VALUES (?, ?, ?, 0, 0, 2)').run('todo-new', USER_1.id, 'New');
         dbRef.sqlite!.prepare('UPDATE replicache_server_version SET version = 2').run();
 
-        // Client already has cookie = 1 → should only receive todo-new (version 2 > 1)
         const res = await pullPOST(makeRequest(pullBody(1)));
         const body = await res.json();
 
@@ -222,13 +228,25 @@ describe('pull', () => {
     });
 
     it('returns a del op for soft-deleted todos', async () => {
-        dbRef.sqlite!.prepare('INSERT INTO todos VALUES (?, ?, 0, 1, 2)').run('todo-1', 'Gone');
+        dbRef.sqlite!.prepare('INSERT INTO todos VALUES (?, ?, ?, 0, 1, 2)').run('todo-1', USER_1.id, 'Gone');
         dbRef.sqlite!.prepare('UPDATE replicache_server_version SET version = 2').run();
 
         const res = await pullPOST(makeRequest(pullBody(1)));
         const body = await res.json();
 
         expect(body.patch).toContainEqual({ op: 'del', key: 'todo/todo-1' });
+    });
+
+    it("does not return another user's todos", async () => {
+        dbRef.sqlite!.prepare('INSERT INTO todos VALUES (?, ?, ?, 0, 0, 1)').run('todo-1', USER_1.id, 'Mine');
+        dbRef.sqlite!.prepare('INSERT INTO todos VALUES (?, ?, ?, 0, 0, 1)').run('todo-2', USER_2.id, 'Theirs');
+
+        const res = await pullPOST(makeRequest(pullBody(null), USER_1));
+        const body = await res.json();
+
+        const keys = (body.patch as any[]).map((op: any) => op.key);
+        expect(keys).toContain('todo/todo-1');
+        expect(keys).not.toContain('todo/todo-2');
     });
 
     it('returns lastMutationIDChanges for the client group', async () => {
@@ -243,12 +261,11 @@ describe('pull', () => {
     });
 
     it('does a full sync when cookie exceeds current version (legacy timestamp cookie)', async () => {
-        dbRef.sqlite!.prepare('INSERT INTO todos VALUES (?, ?, 0, 0, 1)').run('todo-1', 'Hello');
+        dbRef.sqlite!.prepare('INSERT INTO todos VALUES (?, ?, ?, 0, 0, 1)').run('todo-1', USER_1.id, 'Hello');
 
         const res = await pullPOST(makeRequest(pullBody(9_999_999)));
         const body = await res.json();
 
-        // fromVersion falls back to 0 → all rows returned
         expect(body.patch).toContainEqual(
             expect.objectContaining({ op: 'put', key: 'todo/todo-1' })
         );
@@ -264,10 +281,6 @@ describe('pull', () => {
         expect(body.cookie).toBe(5);
     });
 });
-
-// ---------------------------------------------------------------------------
-// Push → Pull integration
-// ---------------------------------------------------------------------------
 
 describe('push then pull', () => {
     it('created todo appears in pull', async () => {
@@ -341,22 +354,17 @@ describe('push then pull', () => {
     });
 
     it('second pull with same cookie returns empty lastMutationIDChanges (no "cookie did not change" warning)', async () => {
-        // Simulate the scenario: push a mutation, do a first pull to confirm it,
-        // then do a second pull with the same cookie (nothing changed).
-        // The second pull must return an empty lastMutationIDChanges; otherwise
-        // Replicache emits "cookie did not change, but lastMutationIDChanges is not empty".
         await pushPOST(makeRequest(pushBody([
             { id: 1, name: 'createTodo', args: { id: 'todo-1', text: 'Task' } },
         ])));
 
-        // First pull — confirms the mutation (confirmed_at_version = currentVersion).
         const { cookie } = await pullPOST(makeRequest(pullBody(null))).then(r => r.json());
-
-        // Second pull with the same cookie — version has not changed, so
-        // confirmed_at_version <= cookie for all clients → empty lastMutationIDChanges.
         const body2 = await pullPOST(makeRequest(pullBody(cookie))).then(r => r.json());
 
         expect(body2.cookie).toBe(cookie);
         expect(Object.keys(body2.lastMutationIDChanges)).toHaveLength(0);
     });
 });
+
+
+

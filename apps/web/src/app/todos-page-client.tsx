@@ -1,6 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { ArticleModuleView } from 'features/articles';
 import { TodoModuleRoutes } from 'features/todos';
 import { ProfileModuleView } from 'features/profile';
 import { useEffect, useState } from 'react';
@@ -14,7 +15,7 @@ type SessionUser = {
 };
 
 type AuthMode = 'login' | 'register';
-type AppModule = 'todos' | 'profile';
+type AppModule = 'todos' | 'articles' | 'profile';
 
 async function readJson<T>(response: Response): Promise<T> {
     return response.json() as Promise<T>;
@@ -112,17 +113,17 @@ export default function TodosPageClient() {
                         <div className="card-body justify-between">
                             <div className="space-y-4">
                                 <div className="badge badge-outline border-primary-content/30 text-primary-content">Local-first stack</div>
-                                <h1 className="text-4xl font-black tracking-tight sm:text-5xl">JWT Auth</h1>
+                                <h1 className="text-4xl font-black tracking-tight sm:text-5xl">Workspace Auth</h1>
                                 <p className="max-w-md text-sm/6 text-primary-content/80">
-                                    Sign in to a synced todo workspace backed by Replicache, SQLite, and a server-issued HTTP-only JWT cookie.
+                                    Sign in to a synced workspace with articles, todos, and profile modules backed by Replicache, SQLite, and an HTTP-only JWT cookie.
                                 </p>
                             </div>
 
                             <div className="stats stats-vertical bg-primary-content/10 text-primary-content shadow-none sm:stats-horizontal">
                                 <div className="stat">
-                                    <div className="stat-title text-primary-content/70">Session</div>
-                                    <div className="stat-value text-2xl">7d</div>
-                                    <div className="stat-desc text-primary-content/70">JWT cookie lifetime</div>
+                                    <div className="stat-title text-primary-content/70">Modules</div>
+                                    <div className="stat-value text-2xl">3</div>
+                                    <div className="stat-desc text-primary-content/70">Todos, articles, profile</div>
                                 </div>
                                 <div className="stat">
                                     <div className="stat-title text-primary-content/70">Sync</div>
@@ -161,34 +162,18 @@ export default function TodosPageClient() {
                                     <span className="label">
                                         <span className="label-text font-medium">Email</span>
                                     </span>
-                                    <input
-                                        {...register('email')}
-                                        type="email"
-                                        autoComplete="email"
-                                        placeholder="Email"
-                                        className="input input-bordered w-full"
-                                    />
+                                    <input {...register('email')} type="email" autoComplete="email" placeholder="Email" className="input input-bordered w-full" />
                                     {errors.email ? <span className="label-text-alt mt-2 text-error">{errors.email.message}</span> : null}
                                 </label>
                                 <label className="form-control w-full">
                                     <span className="label">
                                         <span className="label-text font-medium">Password</span>
                                     </span>
-                                    <input
-                                        {...register('password')}
-                                        type="password"
-                                        autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
-                                        placeholder="Password"
-                                        className="input input-bordered w-full"
-                                    />
+                                    <input {...register('password')} type="password" autoComplete={mode === 'register' ? 'new-password' : 'current-password'} placeholder="Password" className="input input-bordered w-full" />
                                     {errors.password ? <span className="label-text-alt mt-2 text-error">{errors.password.message}</span> : null}
                                 </label>
 
-                                {error ? (
-                                    <div className="alert alert-error alert-soft text-sm">
-                                        <span>{error}</span>
-                                    </div>
-                                ) : null}
+                                {error ? <div className="alert alert-error alert-soft text-sm"><span>{error}</span></div> : null}
 
                                 <button type="submit" disabled={isSubmitting} className="btn btn-primary w-full">
                                     {isSubmitting ? <span className="loading loading-spinner loading-sm" /> : null}
@@ -207,7 +192,7 @@ export default function TodosPageClient() {
             <header className="navbar mb-6 rounded-box border border-base-300 bg-base-100/90 px-4 shadow-lg backdrop-blur">
                 <div className="flex-1">
                     <div>
-                        <p className="text-lg font-bold">Local First Todos</p>
+                        <p className="text-lg font-bold">Local First Workspace</p>
                         <p className="text-sm text-base-content/70">Authenticated with an HTTP-only JWT cookie.</p>
                     </div>
                 </div>
@@ -221,40 +206,19 @@ export default function TodosPageClient() {
                             <span>{user.email.slice(0, 1).toUpperCase()}</span>
                         </div>
                     </div>
-                    <button
-                        type="button"
-                        onClick={() => void handleLogout()}
-                        disabled={loggingOut}
-                        className="btn btn-ghost btn-sm"
-                    >
+                    <button type="button" onClick={() => void handleLogout()} disabled={loggingOut} className="btn btn-ghost btn-sm">
                         {loggingOut ? <span className="loading loading-spinner loading-xs" /> : null}
                         Sign out
                     </button>
                 </div>
             </header>
             <nav className="tabs tabs-box mb-6 w-fit bg-base-100 p-1 shadow-md" aria-label="Application modules">
-                <button
-                    type="button"
-                    onClick={() => setActiveModule('todos')}
-                    className={`tab rounded-lg px-5 ${activeModule === 'todos' ? 'tab-active bg-primary text-primary-content' : ''}`}
-                >
-                    Todos
-                </button>
-                <button
-                    type="button"
-                    onClick={() => setActiveModule('profile')}
-                    className={`tab rounded-lg px-5 ${activeModule === 'profile' ? 'tab-active bg-primary text-primary-content' : ''}`}
-                >
-                    Profile
-                </button>
+                <button type="button" onClick={() => setActiveModule('todos')} className={`tab rounded-lg px-5 ${activeModule === 'todos' ? 'tab-active bg-primary text-primary-content' : ''}`}>Todos</button>
+                <button type="button" onClick={() => setActiveModule('articles')} className={`tab rounded-lg px-5 ${activeModule === 'articles' ? 'tab-active bg-primary text-primary-content' : ''}`}>Articles</button>
+                <button type="button" onClick={() => setActiveModule('profile')} className={`tab rounded-lg px-5 ${activeModule === 'profile' ? 'tab-active bg-primary text-primary-content' : ''}`}>Profile</button>
             </nav>
-            {error ? (
-                <div className="alert alert-error alert-soft mb-4 text-sm">
-                    <span>{error}</span>
-                </div>
-            ) : null}
-            {activeModule === 'todos' ? <TodoModuleRoutes /> : <ProfileModuleView profile={user} />}
+            {error ? <div className="alert alert-error alert-soft mb-4 text-sm"><span>{error}</span></div> : null}
+            {activeModule === 'todos' ? <TodoModuleRoutes /> : activeModule === 'articles' ? <ArticleModuleView /> : <ProfileModuleView profile={user} />}
         </main>
     );
 }
-

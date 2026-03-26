@@ -182,3 +182,15 @@ test('second pull does not trigger "cookie did not change" warning', async ({ pa
     );
     expect(cookieWarnings).toHaveLength(0);
 });
+
+test('can create and publish an article', async ({ page }) => {
+    await page.getByRole('button', { name: 'Articles' }).click();
+    await page.getByPlaceholder('Article title').fill('Launch Notes');
+    await page.getByPlaceholder('Write something worth syncing').fill('This workspace now supports articles.');
+    await page.getByRole('button', { name: 'Create article' }).click();
+
+    await expect(page.getByText('Launch Notes')).toBeVisible();
+    await page.getByRole('button', { name: 'Publish' }).click();
+    await expect(page.getByRole('article').getByText('Published')).toBeVisible();
+});
+
