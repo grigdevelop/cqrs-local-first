@@ -1,4 +1,5 @@
 export { createApplication, createClientMutators } from './application';
+export type { MiddlewareContext, MiddlewareFn } from './middleware';
 export {
     CqrsError,
     HandlerNotFoundError,

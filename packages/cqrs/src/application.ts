@@ -3,6 +3,7 @@ import { Container } from "inversify";
 import type { WriteTransaction } from "replicache";
 import { HandlerInstance, HandlerClass, OperationDefinition } from "./operation";
 import { HandlerNotFoundError, ValidationError } from "./errors";
+import { type MiddlewareFn, runPipeline } from "./middleware";
 
 function parseOrThrow<T>(
     schema: { parse(v: unknown): T },
@@ -31,9 +32,11 @@ export function createApplication<
     TMutationClasses extends HandlerClass[] = []
 >(options: {
     services?: (container: Container) => void;
+    middleware?: MiddlewareFn[];
     queries?: TQueryClasses;
     mutations?: TMutationClasses;
 }) {
+    const middleware = options.middleware ?? [];
     const container = new Container();
 
     if (options.services) {
@@ -67,8 +70,11 @@ export function createApplication<
             const handler = this.queryHandlers.get(type);
             if (!handler) throw new HandlerNotFoundError('query', type);
             const validatedInput = parseOrThrow(handler.definition.input, input, 'input', type);
-            return handler.execute({ type, input: validatedInput })
-                .then(result => parseOrThrow(handler.definition.output, result, 'output', type)) as Promise<OutputFor<DefinitionsOf<TQueryClasses>, TType>>;
+            return runPipeline(
+                { type, kind: 'query', input: validatedInput },
+                middleware,
+                () => handler.execute({ type, input: validatedInput }),
+            ).then(result => parseOrThrow(handler.definition.output, result, 'output', type)) as Promise<OutputFor<DefinitionsOf<TQueryClasses>, TType>>;
         }
 
         executeMutation<TType extends DefinitionsOf<TMutationClasses>['type']>(
@@ -78,8 +84,11 @@ export function createApplication<
             const handler = this.mutationHandlers.get(type);
             if (!handler) throw new HandlerNotFoundError('mutation', type);
             const validatedInput = parseOrThrow(handler.definition.input, input, 'input', type);
-            return handler.execute({ type, input: validatedInput })
-                .then(result => parseOrThrow(handler.definition.output, result, 'output', type)) as Promise<OutputFor<DefinitionsOf<TMutationClasses>, TType>>;
+            return runPipeline(
+                { type, kind: 'mutation', input: validatedInput },
+                middleware,
+                () => handler.execute({ type, input: validatedInput }),
+            ).then(result => parseOrThrow(handler.definition.output, result, 'output', type)) as Promise<OutputFor<DefinitionsOf<TMutationClasses>, TType>>;
         }
     }
     return new Application();
