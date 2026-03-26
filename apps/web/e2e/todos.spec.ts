@@ -104,9 +104,9 @@ test('can add multiple todos', async ({ page }) => {
         await page.getByRole('button', { name: 'Add' }).click();
     }
 
-    await expect(page.getByText('First')).toBeVisible();
-    await expect(page.getByText('Second')).toBeVisible();
-    await expect(page.getByText('Third')).toBeVisible();
+    await expect(page.getByText('First', { exact: true })).toBeVisible();
+    await expect(page.getByText('Second', { exact: true })).toBeVisible();
+    await expect(page.getByText('Third', { exact: true })).toBeVisible();
 });
 
 test('input is cleared after adding a todo', async ({ page }) => {

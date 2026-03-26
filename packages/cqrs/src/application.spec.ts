@@ -111,6 +111,73 @@ describe('createApplication', () => {
         });
     });
 
+    describe('output validation', () => {
+        it('strips unknown fields from query output', async () => {
+            const strictQuery = createQuery('strict', z.void(), z.object({ x: z.number() }));
+            type StrictInput = ExtractQueryInput<typeof strictQuery>;
+
+            @injectable()
+            class StrictQueryHandler extends createQueryHandler(strictQuery) {
+                async execute(_input: StrictInput) {
+                    // Handler returns extra field that isn't in the output schema.
+                    return { x: 1, extra: 'should be stripped' } as any;
+                }
+            }
+
+            const app = createApplication({ queries: [StrictQueryHandler] });
+            const result = await app.executeQuery('strict', undefined);
+            expect(result).toEqual({ x: 1 });
+            expect((result as any).extra).toBeUndefined();
+        });
+
+        it('throws a ZodError when query output fails validation', async () => {
+            const badOutputQuery = createQuery('badOutput', z.void(), z.number());
+            type BadOutputInput = ExtractQueryInput<typeof badOutputQuery>;
+
+            @injectable()
+            class BadOutputQueryHandler extends createQueryHandler(badOutputQuery) {
+                async execute(_input: BadOutputInput): Promise<any> {
+                    return 'not-a-number';
+                }
+            }
+
+            const app = createApplication({ queries: [BadOutputQueryHandler] });
+            await expect(app.executeQuery('badOutput', undefined)).rejects.toThrow();
+        });
+
+        it('throws a ZodError when mutation output fails validation', async () => {
+            const badOutputMutation = createMutation('badOutputMut', z.void(), z.boolean());
+            type BadOutputMutInput = ExtractMutationInput<typeof badOutputMutation>;
+
+            @injectable()
+            class BadOutputMutationHandler extends createMutationHandler(badOutputMutation) {
+                async execute(_input: BadOutputMutInput): Promise<any> {
+                    return 42;
+                }
+            }
+
+            const app = createApplication({ mutations: [BadOutputMutationHandler] });
+            await expect(app.executeMutation('badOutputMut', undefined)).rejects.toThrow();
+        });
+
+        it('strips unknown fields from mutation output', async () => {
+            const strictMutation = createMutation('strictMut', z.void(), z.object({ id: z.string() }));
+            type StrictMutInput = ExtractMutationInput<typeof strictMutation>;
+
+            @injectable()
+            class StrictMutationHandler extends createMutationHandler(strictMutation) {
+                async execute(_input: StrictMutInput) {
+                    return { id: 'abc', secret: 'should be stripped' } as any;
+                }
+            }
+
+            const app = createApplication({ mutations: [StrictMutationHandler] });
+            const result = await app.executeMutation('strictMut', undefined);
+            expect(result).toEqual({ id: 'abc' });
+            expect((result as any).secret).toBeUndefined();
+        });
+    });
+
     describe('input validation', () => {
         const app = createApplication({
             queries: [EchoQueryHandler],

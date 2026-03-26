@@ -72,40 +72,60 @@ export function TodoApp({ filter = 'all' }: TodoAppProps) {
 
     return (
         <>
-            <form onSubmit={handleSubmit} className="mb-6 flex gap-2">
-                <input
-                    ref={inputRef}
-                    placeholder="What needs to be done?"
-                    autoComplete="off"
-                    className="flex-1 rounded-lg border px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <button
-                    type="submit"
-                    className="rounded-lg bg-blue-500 px-5 py-2 font-medium text-white transition-colors hover:bg-blue-600"
-                >
+            <form onSubmit={handleSubmit} className="mb-6 flex flex-col gap-3 md:flex-row">
+                <label className="input input-bordered input-lg flex w-full items-center gap-3 md:flex-1">
+                    <span className="text-base-content/40">+</span>
+                    <input
+                        ref={inputRef}
+                        placeholder="What needs to be done?"
+                        autoComplete="off"
+                        className="grow"
+                    />
+                </label>
+                <button type="submit" className="btn btn-primary btn-lg md:w-auto">
                     Add
                 </button>
             </form>
 
             {visibleTodos.length === 0 ? (
-                <p className="py-8 text-center text-gray-400">No todos in this view yet.</p>
+                <div className="hero rounded-box border border-dashed border-base-300 bg-base-200/60 py-12">
+                    <div className="hero-content text-center">
+                        <div className="max-w-sm">
+                            <div className="mb-3 text-4xl">□</div>
+                            <p className="text-lg font-semibold">No todos in this view yet.</p>
+                            <p className="mt-2 text-sm text-base-content/60">Add one above to create your first synced task.</p>
+                        </div>
+                    </div>
+                </div>
             ) : (
-                <ul className="space-y-2">
+                <ul className="space-y-3">
                     {visibleTodos.map((todo) => (
-                        <li key={todo.id} className="flex items-center gap-3 rounded-lg border px-4 py-3">
+                        <li
+                            key={todo.id}
+                            className={[
+                                'flex items-center gap-3 rounded-box border border-base-300 bg-base-100 px-4 py-3 shadow-sm transition-all',
+                                todo.done ? 'opacity-80' : 'hover:-translate-y-0.5 hover:shadow-md',
+                            ].join(' ')}
+                        >
                             <button
                                 onClick={() => rep?.mutate.toggleTodo({ id: todo.id })}
-                                className="text-xl leading-none"
+                                className={`btn btn-circle btn-sm ${todo.done ? 'btn-success' : 'btn-ghost'}`}
                                 aria-label={todo.done ? 'Mark incomplete' : 'Mark complete'}
                             >
                                 {todo.done ? '\u2705' : '\u2B1C'}
                             </button>
-                            <span className={`flex-1 ${todo.done ? 'text-gray-400 line-through' : ''}`}>
-                                {todo.text}
-                            </span>
+                            <div className="flex-1">
+                                <span className={`block text-base ${todo.done ? 'text-base-content/50 line-through' : 'text-base-content'}`}>
+                                    {todo.text}
+                                </span>
+                                <span className="text-xs text-base-content/50">
+                                    {todo.done ? 'Completed task' : 'Active task'}
+                                </span>
+                            </div>
+                            <div className="badge badge-outline">{todo.done ? 'Done' : 'Open'}</div>
                             <button
                                 onClick={() => rep?.mutate.deleteTodo({ id: todo.id })}
-                                className="text-xl leading-none text-gray-300 transition-colors hover:text-red-500"
+                                className="btn btn-ghost btn-sm text-error"
                                 aria-label="Delete todo"
                             >
                                 {'\u00D7'}
