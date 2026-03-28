@@ -1,11 +1,19 @@
 'use client';
 
-import { useRef } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
 import { useSubscribe } from 'replicache-react';
+import { z } from 'zod';
 import { useApplicationReplicache } from '../../../application/replicache-provider';
 import type { Todo } from '../model/schema';
 
 export type TodoFilter = 'all' | 'active' | 'completed';
+
+const CreateTodoSchema = z.object({
+    text: z.string().min(1, 'Todo text is required'),
+});
+
+type CreateTodoForm = z.infer<typeof CreateTodoSchema>;
 
 type TodoModuleViewProps = {
     filter?: TodoFilter;
@@ -19,7 +27,18 @@ function matchesFilter(todo: Todo, filter: TodoFilter) {
 
 export function TodoModuleView({ filter = 'all' }: TodoModuleViewProps) {
     const rep = useApplicationReplicache();
-    const inputRef = useRef<HTMLInputElement>(null);
+
+    const {
+        register,
+        handleSubmit,
+        reset,
+        formState: { errors, isSubmitting },
+    } = useForm<CreateTodoForm>({
+        resolver: zodResolver(CreateTodoSchema),
+        defaultValues: {
+            text: '',
+        },
+    });
 
     const todos = useSubscribe(
         rep,
@@ -31,23 +50,31 @@ export function TodoModuleView({ filter = 'all' }: TodoModuleViewProps) {
     );
     const visibleTodos = todos.filter((todo) => matchesFilter(todo, filter));
 
-    function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-        e.preventDefault();
-        const text = inputRef.current?.value.trim();
-        if (!text || !rep) return;
-        rep.mutate.createTodo({ id: crypto.randomUUID(), text });
-        if (inputRef.current) inputRef.current.value = '';
+    function onSubmit(data: CreateTodoForm) {
+        if (!rep) return;
+        rep.mutate.createTodo({ id: crypto.randomUUID(), text: data.text });
+        reset();
     }
 
     return (
         <>
-            <form onSubmit={handleSubmit} className="mb-6 flex flex-col gap-3 md:flex-row">
-                <label className="input input-bordered input-lg flex w-full items-center gap-3 md:flex-1">
-                    <span className="text-base-content/40">+</span>
-                    <input ref={inputRef} placeholder="What needs to be done?" autoComplete="off" className="grow" disabled={!rep} />
+            <form onSubmit={(event) => void handleSubmit(onSubmit)(event)} className="mb-6 flex flex-col gap-3 md:flex-row">
+                <label className="form-control md:flex-1">
+                    <div className="input input-bordered input-lg flex w-full items-center gap-3">
+                        <span className="text-base-content/40">+</span>
+                        <input
+                            {...register('text')}
+                            placeholder="What needs to be done?"
+                            autoComplete="off"
+                            className="grow"
+                            disabled={!rep || isSubmitting}
+                        />
+                    </div>
+                    {errors.text ? <span className="label-text-alt mt-1 text-error">{errors.text.message}</span> : null}
                 </label>
-                <button type="submit" className="btn btn-primary btn-lg md:w-auto" disabled={!rep}>
-                    Add
+                <button type="submit" className="btn btn-primary btn-lg md:w-auto" disabled={!rep || isSubmitting}>
+                    {isSubmitting ? <span className="loading loading-spinner loading-sm" /> : null}
+                    {isSubmitting ? 'Adding...' : 'Add'}
                 </button>
             </form>
 
